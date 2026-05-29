@@ -119,3 +119,18 @@ model OrderItem {
   @@index([orderId])
   @@index([productId])
 }
+
+model Admin {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  role         AdminRole @default(STAFF)
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+enum AdminRole {
+  OWNER
+  STAFF
+}

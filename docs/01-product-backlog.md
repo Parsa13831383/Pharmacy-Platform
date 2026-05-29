@@ -33,19 +33,19 @@ Prepare scalable architecture and development environment.
 
 ## Tasks
 
-* Set up GitHub repository
-* Configure backend architecture
-* Configure TypeScript
-* Configure Prisma ORM
-* Configure PostgreSQL
-* Configure environment variables
-* Configure project structure
-* Configure RTL-first frontend foundation
-* Configure linting and formatting
-* Define system architecture
-* Define API architecture
-* Define operational workflow
-* Define deployment strategy
+* Set up GitHub repository ⚔️
+* Configure backend architecture ⚔️
+* Configure TypeScript ⚔️
+* Configure Prisma ORM ⚔️
+* Configure PostgreSQL ⚔️
+* Configure environment variables ⚔️
+* Configure project structure ⚔️
+* Configure RTL-first frontend foundation ⚔️
+* Configure linting and formatting ⚔️
+* Define system architecture ⚔️
+* Define API architecture ⚔️
+* Define operational workflow ⚔️
+* Define deployment strategy ⚔️
 
 ---
 
@@ -57,31 +57,31 @@ Allow customers to browse and purchase products easily.
 
 ## Tasks
 
-* Homepage
-* Featured products section
-* Product categories
-* Product listing page
-* Product detail page
-* Search bar
-* Product search
-* Product filtering
-* Responsive mobile design
-* RTL support
-* Product image galleries
-* Related products
-* Discount display
-* Add to cart
-* Quantity selector
-* Empty cart state
-* Cart total calculation
+* Homepage ⚔️ 
+* Featured products section ⚔️ 
+* Product categories ⚔️
+* Product listing page ⚔️
+* Product detail page ⚔️
+* Search bar ⚔️
+* Product search ⚔️
+* Product filtering ⚔️
+* Responsive mobile design ⚔️
+* RTL support ⚔️
+* Product image galleries ⚔️
+* Related products ⚔️
+* Discount display ⚔️
+* Add to cart ⚔️
+* Quantity selector ⚔️
+* Empty cart state ⚔️
+* Cart total calculation ⚔️
 
 ## UX Goals
 
-* Extremely simple
-* Minimal friction
-* Premium design
-* Fast browsing
-* Mobile-first
+* Extremely simple ⚔️
+* Minimal friction ⚔️
+* Premium design ⚔️
+* Fast browsing ⚔️
+* Mobile-first ⚔️
 
 ---
 
@@ -446,3 +446,108 @@ The platform should feel:
 
 > This is not just a pharmacy website.
 > It is a commerce operations platform.
+
+
+# EPIC 13 — Security & Data Protection
+Goal
+
+Protect customer data, orders, inventory, and admin operations against misuse, fraud, and attacks.
+
+# Admin Security
+Tasks
+Password hashing (Argon2)
+JWT authentication
+Secure session management
+Role-based permissions
+Admin route protection
+Forced logout capability
+Password reset flow
+Login attempt limiting
+API Security
+Tasks
+Request validation (Zod)
+Rate limiting
+CORS configuration
+Security headers
+Input sanitization
+SQL injection protection
+API error handling
+Secure logging
+Checkout Security
+Tasks
+OTP verification
+OTP expiration
+OTP retry limits
+Duplicate order prevention
+Order idempotency keys
+Payment verification
+Fraud protection rules
+Inventory Protection
+Tasks
+Atomic stock updates
+Database transactions
+Race condition prevention
+Stock validation before order creation
+Inventory audit logs
+
+This is actually one of the most important parts of the platform.
+
+# Customer Data Protection
+Tasks
+Secure storage of customer information
+Data minimization
+Encrypted HTTPS traffic
+Secure address storage
+Secure phone number storage
+Admin Audit System
+Tasks
+
+Track:
+
+Product created
+Product deleted
+Stock changed
+Price changed
+Order modified
+User login
+
+Example:
+
+2026-05-29 14:42
+
+User: Admin
+Action: Updated Stock
+Product: Vitamin D
+Old: 24
+New: 12
+
+This becomes extremely useful when multiple staff members use the system.
+
+# Production Security
+Tasks
+HTTPS
+Environment variable protection
+Database backup strategy
+Secret management
+Monitoring
+Error tracking
+What security do we actually need for V1?
+
+Must have:
+
+Admin login
+Argon2 password hashing
+JWT auth
+Protected admin routes
+OTP checkout verification
+Rate limiting
+Request validation
+Transactions for stock updates
+Audit logging
+
+Can wait until V2:
+
+2FA for admins
+Advanced fraud detection
+Device fingerprinting
+Security dashboards
