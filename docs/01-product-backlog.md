@@ -93,17 +93,17 @@ Allow users to place secure orders without account creation.
 
 ## Tasks
 
-* Guest checkout
-* Phone number input
-* OTP / confirmation code verification
-* Customer full legal name input
-* Address form
-* Delivery notes
-* Contact method selection
-* Payment method selection
-* Order confirmation page
-* Duplicate order prevention
-* Backend stock validation before order creation
+* Guest checkout ⚔️
+* Phone number input ⚔️
+* OTP / confirmation code verification ⚔️
+* Customer full legal name input ⚔️
+* Address form ⚔️
+* Delivery notes ⚔️
+* Contact method selection ⚔️
+* Payment method selection ⚔️
+* Order confirmation page ⚔️
+* Duplicate order prevention ⚔️
+* Backend stock validation before order creation ⚔️
 
 ## Important Business Rules
 
@@ -134,17 +134,17 @@ Allow pharmacy owner and staff to manage products easily.
 
 ## Tasks
 
-* Create product
-* Edit product
-* Delete or deactivate product
-* Upload product images
-* Manage categories
-* Update prices
-* Update discounts
-* Update stock quantity
-* Configure low-stock threshold
-* Product activation/deactivation
-* Product search inside admin dashboard
+* Create product ⚔️
+* Edit product ⚔️
+* Delete or deactivate product ⚔️
+* Upload product images ⚔️
+* Manage categories ⚔️
+* Update prices ⚔️
+* Update discounts ⚔️
+* Update stock quantity ⚔️
+* Configure low-stock threshold ⚔️
+* Product activation/deactivation ⚔️ 
+* Product search inside admin dashboard ⚔️
 
 ## Product Data Structure
 
@@ -169,13 +169,13 @@ Prevent overselling and maintain inventory reliability.
 
 ## Tasks
 
-* Backend stock validation
-* Transaction-safe inventory updates
-* Inventory decrement logic
-* Inventory restoration logic
-* Low-stock alerts
-* Inventory logs/history
-* Stock adjustment UI
+* Backend stock validation 
+* Transaction-safe inventory updates 
+* Inventory decrement logic 
+* Inventory restoration logic 
+* Low-stock alerts 
+* Inventory logs/history 
+* Stock adjustment UI 
 * Simultaneous purchase handling
 * Race-condition prevention
 
@@ -294,14 +294,14 @@ Protect pharmacy operations.
 
 ## Tasks
 
-* Admin login
-* Password hashing
-* Protected admin routes
-* Session/JWT management
-* Role foundation
-* Owner/staff permissions
-* Secure logout
-* Token validation middleware
+* Admin login ⚔️
+* Password hashing ⚔️
+* Protected admin routes ⚔️
+* Session/JWT management ⚔️
+* Role foundation ⚔️
+* Owner/staff permissions ⚔️
+* Secure logout ⚔️
+* Token validation middleware ⚔️
 
 ## Roles
 
