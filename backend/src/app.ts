@@ -5,6 +5,7 @@ import morgan from 'morgan'
 import authRoutes from './modules/auth/auth.routes'
 import categoryRoutes from './modules/categories/category.routes'
 import { adminProductRouter, publicProductRouter } from './modules/products/product.routes'
+import inventoryRoutes from './modules/inventory/inventory.routes'
 
 const app = express()
 
@@ -20,6 +21,7 @@ app.get('/health', (_req, res) => {
 app.use('/api/admin/auth', authRoutes)
 app.use('/api/admin/categories', categoryRoutes)
 app.use('/api/admin/products', adminProductRouter)
+app.use('/api/admin/inventory', inventoryRoutes)
 app.use('/api/products', publicProductRouter)
 
 export default app
