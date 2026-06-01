@@ -87,30 +87,28 @@ function OrderSuccessContent() {
               transition={{ delay: 0.65 }}
               className="flex flex-col sm:flex-row gap-3 justify-center"
             >
-              <Link href="/">
-                <Button variant="outline" className="w-full sm:w-auto rounded-xl gap-2">
-                  <Home className="w-4 h-4" />
-                  بازگشت به خانه
-                </Button>
-              </Link>
+              {orderNumber && (
+                <Link href={`/track-order?orderNumber=${encodeURIComponent(orderNumber)}`}>
+                  <Button className="w-full sm:w-auto rounded-xl gap-2">
+                    <Package className="w-4 h-4" />
+                    پیگیری سفارش
+                  </Button>
+                </Link>
+              )}
               <Link href="/products">
-                <Button className="w-full sm:w-auto rounded-xl gap-2">
+                <Button variant="outline" className="w-full sm:w-auto rounded-xl gap-2">
                   <ShoppingBag className="w-4 h-4" />
                   ادامه خرید
                 </Button>
               </Link>
+              <Link href="/">
+                <Button variant="ghost" className="w-full sm:w-auto rounded-xl gap-2 text-muted-foreground">
+                  <Home className="w-4 h-4" />
+                  خانه
+                </Button>
+              </Link>
             </motion.div>
           </div>
-
-          {/* Footer note */}
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.8 }}
-            className="text-center text-muted-foreground text-xs mt-6"
-          >
-            پیگیری سفارشات در نسخه‌های آتی در دسترس خواهد بود.
-          </motion.p>
         </motion.div>
       </main>
 

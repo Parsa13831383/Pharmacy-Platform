@@ -2,7 +2,7 @@ import type { Admin, LoginResponse } from '@/types/admin'
 import type { Category, CreateCategoryInput, UpdateCategoryInput } from '@/types/category'
 import type { Product, CreateProductInput, UpdateProductInput } from '@/types/product'
 import type { InventoryItem, InventoryAdjustment, AdjustStockInput, AdjustStockResult } from '@/types/inventory'
-import type { Order, OrderListItem, OrderStatus, UpdatedOrderStatus } from '@/types/order'
+import type { Order, OrderListItem, OrderStatus, UpdatedOrderStatus, PublicOrder } from '@/types/order'
 import type { PublicProduct, GetPublicProductsParams } from '@/types/public-product'
 import type {
   SendOtpResponse,
@@ -237,4 +237,13 @@ export async function createCheckoutOrder(
     method: 'POST',
     body: JSON.stringify(payload),
   })
+}
+
+// ─── Public Order Tracking ────────────────────────────────────────────────────
+
+export async function getPublicOrderByNumber(orderNumber: string): Promise<PublicOrder> {
+  const data = await apiFetch<{ order: PublicOrder }>(
+    `/api/orders/${encodeURIComponent(orderNumber)}`,
+  )
+  return data.order
 }

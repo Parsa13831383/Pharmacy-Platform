@@ -10,10 +10,9 @@ import { Input } from '@/components/ui/input'
 import { useRouter } from 'next/navigation'
 
 const navLinks = [
+  { href: '/', label: 'خانه' },
   { href: '/products', label: 'محصولات' },
-  { href: '/products?category=skincare', label: 'مراقبت از پوست' },
-  { href: '/products?category=cosmetics', label: 'آرایشی' },
-  { href: '/products?category=supplements', label: 'مکمل‌ها' },
+  { href: '/track-order', label: 'پیگیری سفارش' },
 ]
 
 export function Header() {

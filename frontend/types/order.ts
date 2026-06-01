@@ -52,6 +52,13 @@ export interface OrderListItem {
   createdAt: string
 }
 
+/** Returned by public GET /api/orders/:orderNumber */
+export interface PublicOrder {
+  orderNumber: string
+  orderStatus: OrderStatus
+  createdAt: string
+}
+
 /** Returned by PATCH /api/admin/orders/:id/status */
 export interface UpdatedOrderStatus {
   id: string
