@@ -16,18 +16,25 @@ import mediaRouter from './modules/media/media.routes'
 
 const app = express()
 
-// ─── CORS allowed origins ─────────────────────────────────────────────────────
-// The Vercel URL is hardcoded so it works even if FRONTEND_URL env var is wrong.
-// env.FRONTEND_URL (trimmed) is added on top to cover future domain changes.
-const allowedOrigins: string[] = [
+// ─── CORS origin check ────────────────────────────────────────────────────────
+// Returns true if the origin should receive CORS headers.
+// Exact list covers localhost and the main production URL.
+// The Vercel pattern covers every preview deployment URL Vercel auto-generates
+// (e.g. pharmacy-platform-abc123-user.vercel.app).
+const EXACT_ORIGINS = new Set([
   'http://localhost:3000',
   'http://localhost:3001',
   'http://localhost:3002',
   'https://pharmacy-platform-lilac.vercel.app',
-]
-const configuredFrontend = env.FRONTEND_URL.trim()
-if (configuredFrontend && !allowedOrigins.includes(configuredFrontend)) {
-  allowedOrigins.push(configuredFrontend)
+  ...(env.FRONTEND_URL.trim() ? [env.FRONTEND_URL.trim()] : []),
+])
+
+function isOriginAllowed(origin: string): boolean {
+  if (EXACT_ORIGINS.has(origin)) return true
+  // Allow any Vercel preview URL for this project
+  // Pattern: https://pharmacy-platform-<hash>-<user>.vercel.app
+  if (origin.startsWith('https://pharmacy-platform-') && origin.endsWith('.vercel.app')) return true
+  return false
 }
 
 // ─── Request logger ───────────────────────────────────────────────────────────
@@ -36,13 +43,11 @@ app.use((req, _res, next) => {
   next()
 })
 
-// ─── Preflight — Express-5-safe middleware (no app.options('*')) ───────────────
-// app.options('*', ...) uses a bare wildcard that no longer works in Express 5.
-// This plain middleware intercepts every OPTIONS request before any route is reached.
+// ─── Preflight handler (Express-5-safe — plain middleware, no app.options('*')) ─
 app.use((req, res, next) => {
   if (req.method !== 'OPTIONS') { next(); return }
   const origin = req.headers['origin']
-  if (origin && allowedOrigins.includes(origin)) {
+  if (origin && isOriginAllowed(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin)
     res.setHeader('Vary', 'Origin')
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS')
@@ -54,8 +59,8 @@ app.use((req, res, next) => {
 // ─── CORS headers for all non-OPTIONS requests ────────────────────────────────
 app.use(cors({
   origin(origin, callback) {
-    if (!origin) return callback(null, true)       // curl / Postman / server-to-server
-    if (allowedOrigins.includes(origin)) return callback(null, true)
+    if (!origin) return callback(null, true) // curl / Postman / server-to-server
+    if (isOriginAllowed(origin)) return callback(null, true)
     console.error('[CORS] Blocked origin:', origin)
     return callback(new Error(`CORS blocked: ${origin}`))
   },
@@ -66,17 +71,19 @@ app.use(cors({
 }))
 
 // ─── Other middleware ──────────────────────────────────────────────────────────
-// crossOriginResourcePolicy: cross-origin allows the frontend to load /uploads/* images
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }))
 app.use(express.json())
 app.use(morgan('dev'))
 
-// ─── Debug route — remove after confirming CORS works in production ────────────
+// ─── Debug route ──────────────────────────────────────────────────────────────
 app.get('/debug/cors', (req, res) => {
+  const origin = req.headers['origin'] ?? null
   res.json({
     success: true,
-    origin: req.headers['origin'] ?? null,
-    allowedOrigins,
+    origin,
+    allowed: origin ? isOriginAllowed(origin) : null,
+    exactOrigins: [...EXACT_ORIGINS],
+    vercelPattern: 'https://pharmacy-platform-*.vercel.app',
   })
 })
 
@@ -98,8 +105,7 @@ app.use('/api/products', publicProductRouter)
 app.use('/api/orders', publicOrderRouter)
 app.use('/api/promotions', publicPromotionRouter)
 app.use('/api/admin/media', mediaRouter)
-// NOTE: /uploads is served from the local filesystem for the demo only.
-// For production, move to object storage (S3, Cloudflare R2, etc.).
+// NOTE: /uploads is local filesystem only — for production use object storage.
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')))
 
 export default app
