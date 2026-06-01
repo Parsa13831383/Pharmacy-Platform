@@ -1,10 +1,9 @@
 import type { Request, Response, NextFunction } from 'express'
+import { env } from '../../config/env'
 import * as svc from './media.service'
 
-const BASE_URL = process.env.BASE_URL ?? 'http://localhost:3000'
-
 function buildUrl(subDir: string, filename: string): string {
-  return `${BASE_URL}/uploads/${subDir}/${filename}`
+  return `${env.BASE_URL}/uploads/${subDir}/${filename}`
 }
 
 // ─── Product images ───────────────────────────────────────────────────────────
