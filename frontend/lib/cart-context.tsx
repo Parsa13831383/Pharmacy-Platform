@@ -1,41 +1,78 @@
 'use client'
 
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from 'react'
+import type { CartItem, PublicProduct } from '@/types/public-product'
 
-export interface CartItem {
-  id: string
-  name: string
-  nameEn: string
-  price: number
-  image: string
-  quantity: number
-  category: string
-}
+export type { CartItem }
 
 interface CartContextType {
   items: CartItem[]
-  addItem: (item: Omit<CartItem, 'quantity'>) => void
+  addItem: (product: PublicProduct, quantity?: number) => void
   removeItem: (id: string) => void
   updateQuantity: (id: string, quantity: number) => void
   clearCart: () => void
   totalItems: number
-  totalPrice: number
+  totalAmount: number
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
+const STORAGE_KEY = 'green-pharmacy-cart'
+
+function cartItemFromProduct(product: PublicProduct, quantity: number): CartItem {
+  const effectivePrice = product.discountedPrice
+    ? Number(product.discountedPrice)
+    : Number(product.price)
+  return {
+    id: product.id,
+    slug: product.slug,
+    name: product.name,
+    price: effectivePrice,
+    originalPrice: product.discountedPrice ? Number(product.price) : null,
+    brand: product.brand,
+    categoryName: product.category?.name ?? null,
+    quantity,
+    stock: product.stockQuantity,
+  }
+}
+
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
+  const [hydrated, setHydrated] = useState(false)
 
-  const addItem = useCallback((item: Omit<CartItem, 'quantity'>) => {
+  // Hydrate from localStorage once on client mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY)
+      if (stored) setItems(JSON.parse(stored) as CartItem[])
+    } catch {
+      // ignore corrupt storage
+    }
+    setHydrated(true)
+  }, [])
+
+  // Persist to localStorage whenever items change (after hydration)
+  useEffect(() => {
+    if (hydrated) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
+    }
+  }, [items, hydrated])
+
+  const addItem = useCallback((product: PublicProduct, quantity = 1) => {
     setItems(prev => {
-      const existing = prev.find(i => i.id === item.id)
+      const existing = prev.find(i => i.id === product.id)
       if (existing) {
-        return prev.map(i => 
-          i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
-        )
+        const next = Math.min(existing.quantity + quantity, existing.stock || Infinity)
+        return prev.map(i => (i.id === product.id ? { ...i, quantity: next } : i))
       }
-      return [...prev, { ...item, quantity: 1 }]
+      return [...prev, cartItemFromProduct(product, Math.min(quantity, product.stockQuantity || 1))]
     })
   }, [])
 
@@ -48,37 +85,30 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setItems(prev => prev.filter(i => i.id !== id))
       return
     }
-    setItems(prev => 
-      prev.map(i => i.id === id ? { ...i, quantity } : i)
+    setItems(prev =>
+      prev.map(i => {
+        if (i.id !== id) return i
+        return { ...i, quantity: Math.min(quantity, i.stock || quantity) }
+      }),
     )
   }, [])
 
-  const clearCart = useCallback(() => {
-    setItems([])
-  }, [])
+  const clearCart = useCallback(() => setItems([]), [])
 
-  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0)
-  const totalPrice = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const totalItems = items.reduce((sum, i) => sum + i.quantity, 0)
+  const totalAmount = items.reduce((sum, i) => sum + i.price * i.quantity, 0)
 
   return (
-    <CartContext.Provider value={{
-      items,
-      addItem,
-      removeItem,
-      updateQuantity,
-      clearCart,
-      totalItems,
-      totalPrice,
-    }}>
+    <CartContext.Provider
+      value={{ items, addItem, removeItem, updateQuantity, clearCart, totalItems, totalAmount }}
+    >
       {children}
     </CartContext.Provider>
   )
 }
 
 export function useCart() {
-  const context = useContext(CartContext)
-  if (!context) {
-    throw new Error('useCart must be used within a CartProvider')
-  }
-  return context
+  const ctx = useContext(CartContext)
+  if (!ctx) throw new Error('useCart must be used within CartProvider')
+  return ctx
 }

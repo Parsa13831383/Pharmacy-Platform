@@ -1,89 +1,151 @@
 'use client'
 
-import { useState, useMemo, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
-import { motion } from 'framer-motion'
-import { Filter, Grid3X3, LayoutList, SlidersHorizontal, X } from 'lucide-react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Search, SlidersHorizontal, X } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
-import { ProductCard } from '@/components/product-card'
+import { PublicProductCard } from '@/components/public-product-card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { products, categories, searchProducts, getProductsByCategory } from '@/lib/products'
+import { getPublicProducts } from '@/lib/api'
+import type { PublicProduct, SortOption } from '@/types/public-product'
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const SORT_OPTIONS: { value: SortOption; label: string }[] = [
+  { value: 'newest', label: 'جدیدترین' },
+  { value: 'price_asc', label: 'قیمت کم به زیاد' },
+  { value: 'price_desc', label: 'قیمت زیاد به کم' },
+]
+
+// ─── Inner content (needs useSearchParams — wrapped in Suspense) ──────────────
 
 function ProductsContent() {
+  const router = useRouter()
   const searchParams = useSearchParams()
-  const categorySlug = searchParams.get('category')
-  const searchQuery = searchParams.get('search')
-  
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  const [sortBy, setSortBy] = useState('newest')
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 3000000])
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(categorySlug)
-  const [isFilterOpen, setIsFilterOpen] = useState(false)
 
-  const filteredProducts = useMemo(() => {
-    let result = [...products]
-    
-    // Search filter
-    if (searchQuery) {
-      result = searchProducts(searchQuery)
+  // ── State synced with URL ──────────────────────────────────────────────────
+  const [search, setSearch] = useState(searchParams.get('search') ?? '')
+  const [category, setCategory] = useState(searchParams.get('category') ?? '')
+  const [sort, setSort] = useState<SortOption>(
+    (searchParams.get('sort') as SortOption | null) ?? 'newest',
+  )
+
+  // ── Products & categories ──────────────────────────────────────────────────
+  const [allProducts, setAllProducts] = useState<PublicProduct[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  // ── Mobile filter drawer ───────────────────────────────────────────────────
+  const [drawerOpen, setDrawerOpen] = useState(false)
+
+  // ── Debounce search ────────────────────────────────────────────────────────
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Fetch all products on mount; subsequent filter/sort is client-side
+  useEffect(() => {
+    setLoading(true)
+    setError('')
+    getPublicProducts()
+      .then(setAllProducts)
+      .catch((err: Error) => setError(err.message))
+      .finally(() => setLoading(false))
+  }, [])
+
+  // ── Derived category list from fetched products ────────────────────────────
+  const categories = useMemo(() => {
+    const map = new Map<string, string>() // slug → name
+    for (const p of allProducts) {
+      if (p.category) map.set(p.category.slug, p.category.name)
     }
-    
-    // Category filter
-    if (selectedCategory) {
-      result = result.filter(p => p.categorySlug === selectedCategory)
+    return [...map.entries()].map(([slug, name]) => ({ slug, name }))
+  }, [allProducts])
+
+  // ── Client-side filter + sort ──────────────────────────────────────────────
+  const displayed = useMemo(() => {
+    let result = [...allProducts]
+
+    if (search.trim()) {
+      const q = search.trim().toLowerCase()
+      result = result.filter(
+        p =>
+          p.name.toLowerCase().includes(q) ||
+          (p.brand ?? '').toLowerCase().includes(q) ||
+          (p.description ?? '').toLowerCase().includes(q),
+      )
     }
-    
-    // Price filter
-    result = result.filter(p => p.price >= priceRange[0] && p.price <= priceRange[1])
-    
-    // Sort
-    switch (sortBy) {
-      case 'price-low':
-        result.sort((a, b) => a.price - b.price)
-        break
-      case 'price-high':
-        result.sort((a, b) => b.price - a.price)
-        break
-      case 'rating':
-        result.sort((a, b) => b.rating - a.rating)
-        break
-      case 'bestsellers':
-        result.sort((a, b) => (b.isBestseller ? 1 : 0) - (a.isBestseller ? 1 : 0))
-        break
-      default:
-        result.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0))
+
+    if (category) {
+      result = result.filter(p => p.category?.slug === category)
     }
-    
+
+    if (sort === 'price_asc') {
+      result.sort((a, b) => Number(a.discountedPrice ?? a.price) - Number(b.discountedPrice ?? b.price))
+    } else if (sort === 'price_desc') {
+      result.sort((a, b) => Number(b.discountedPrice ?? b.price) - Number(a.discountedPrice ?? a.price))
+    } else {
+      result.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+    }
+
     return result
-  }, [searchQuery, selectedCategory, priceRange, sortBy])
+  }, [allProducts, search, category, sort])
 
-  const currentCategory = categories.find(c => c.slug === selectedCategory)
+  // ── Update URL to reflect current filters ─────────────────────────────────
+  function pushURL(s: string, cat: string, srt: SortOption) {
+    const params = new URLSearchParams()
+    if (s) params.set('search', s)
+    if (cat) params.set('category', cat)
+    if (srt !== 'newest') params.set('sort', srt)
+    const qs = params.toString()
+    router.replace(`/products${qs ? `?${qs}` : ''}`, { scroll: false })
+  }
+
+  function handleSearchChange(value: string) {
+    setSearch(value)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => pushURL(value, category, sort), 400)
+  }
+
+  function handleCategory(slug: string) {
+    setCategory(slug)
+    pushURL(search, slug, sort)
+    setDrawerOpen(false)
+  }
+
+  function handleSort(value: SortOption) {
+    setSort(value)
+    pushURL(search, category, value)
+  }
+
+  function clearFilters() {
+    setSearch('')
+    setCategory('')
+    setSort('newest')
+    router.replace('/products', { scroll: false })
+  }
+
+  const hasFilters = !!search || !!category
+
+  // ─────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col" dir="rtl">
       <Header />
-      
+
       <main className="flex-1">
-        {/* Page Header */}
-        <section className="bg-secondary/30 py-12 md:py-16">
+        {/* Page header */}
+        <section className="bg-secondary/30 py-10 md:py-14">
           <div className="container mx-auto px-4">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center"
+              transition={{ duration: 0.5 }}
             >
-              <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                {searchQuery 
-                  ? `نتایج جستجو: "${searchQuery}"`
-                  : currentCategory 
-                    ? currentCategory.name 
-                    : 'همه محصولات'
-                }
-              </h1>
+              <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">محصولات</h1>
               <p className="text-muted-foreground">
-                {filteredProducts.length} محصول یافت شد
+                محصولات مورد نیاز خود را جستجو و انتخاب کنید.
               </p>
             </motion.div>
           </div>
@@ -91,274 +153,244 @@ function ProductsContent() {
 
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col lg:flex-row gap-8">
-            {/* Filters Sidebar - Desktop */}
-            <aside className="hidden lg:block w-64 shrink-0">
-              <div className="sticky top-24 space-y-6">
-                {/* Categories */}
-                <div className="bg-card rounded-2xl p-6 shadow-sm">
-                  <h3 className="font-bold text-foreground mb-4">دسته‌بندی</h3>
-                  <div className="space-y-2">
+            {/* ── Desktop sidebar ──────────────────────────────────────────── */}
+            <aside className="hidden lg:block w-56 shrink-0">
+              <div className="sticky top-24">
+                <div className="bg-card rounded-2xl border border-border p-5">
+                  <h3 className="font-semibold text-foreground mb-4 text-sm">دسته‌بندی</h3>
+                  <div className="space-y-1">
                     <button
-                      onClick={() => setSelectedCategory(null)}
-                      className={`w-full text-right px-3 py-2 rounded-lg transition-colors ${
-                        !selectedCategory ? 'bg-primary/10 text-primary' : 'hover:bg-muted text-muted-foreground'
+                      onClick={() => handleCategory('')}
+                      className={`w-full text-right px-3 py-2 rounded-lg text-sm transition-colors ${
+                        !category
+                          ? 'bg-primary/10 text-primary font-medium'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                       }`}
                     >
                       همه محصولات
                     </button>
                     {categories.map(cat => (
                       <button
-                        key={cat.id}
-                        onClick={() => setSelectedCategory(cat.slug)}
-                        className={`w-full text-right px-3 py-2 rounded-lg transition-colors ${
-                          selectedCategory === cat.slug ? 'bg-primary/10 text-primary' : 'hover:bg-muted text-muted-foreground'
+                        key={cat.slug}
+                        onClick={() => handleCategory(cat.slug)}
+                        className={`w-full text-right px-3 py-2 rounded-lg text-sm transition-colors ${
+                          category === cat.slug
+                            ? 'bg-primary/10 text-primary font-medium'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                         }`}
                       >
                         {cat.name}
-                        <span className="text-xs opacity-60 mr-2">({cat.productCount})</span>
                       </button>
                     ))}
-                  </div>
-                </div>
-
-                {/* Price Range */}
-                <div className="bg-card rounded-2xl p-6 shadow-sm">
-                  <h3 className="font-bold text-foreground mb-4">محدوده قیمت</h3>
-                  <div className="space-y-4">
-                    <div className="flex gap-2">
-                      <Input
-                        type="number"
-                        placeholder="از"
-                        value={priceRange[0]}
-                        onChange={e => setPriceRange([Number(e.target.value), priceRange[1]])}
-                        className="text-center"
-                      />
-                      <Input
-                        type="number"
-                        placeholder="تا"
-                        value={priceRange[1]}
-                        onChange={e => setPriceRange([priceRange[0], Number(e.target.value)])}
-                        className="text-center"
-                      />
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {[
-                        { label: 'زیر ۵۰۰ هزار', range: [0, 500000] },
-                        { label: '۵۰۰ - ۱ میلیون', range: [500000, 1000000] },
-                        { label: 'بالای ۱ میلیون', range: [1000000, 10000000] },
-                      ].map((preset, i) => (
-                        <button
-                          key={i}
-                          onClick={() => setPriceRange(preset.range as [number, number])}
-                          className="text-xs px-3 py-1.5 rounded-full bg-muted hover:bg-primary/10 hover:text-primary transition-colors"
-                        >
-                          {preset.label}
-                        </button>
-                      ))}
-                    </div>
                   </div>
                 </div>
               </div>
             </aside>
 
-            {/* Products Grid */}
-            <div className="flex-1">
+            {/* ── Main content ─────────────────────────────────────────────── */}
+            <div className="flex-1 min-w-0">
               {/* Toolbar */}
-              <div className="flex items-center justify-between mb-6 gap-4">
-                <div className="flex items-center gap-2">
-                  {/* Mobile Filter Button */}
+              <div className="flex flex-col sm:flex-row gap-3 mb-5">
+                {/* Search */}
+                <div className="relative flex-1">
+                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                  <Input
+                    placeholder="جستجوی محصولات..."
+                    value={search}
+                    onChange={e => handleSearchChange(e.target.value)}
+                    className="h-10 pr-9"
+                  />
+                </div>
+
+                {/* Sort + mobile filter */}
+                <div className="flex gap-2 shrink-0">
+                  <select
+                    value={sort}
+                    onChange={e => handleSort(e.target.value as SortOption)}
+                    className="h-10 rounded-xl border border-border bg-card px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  >
+                    {SORT_OPTIONS.map(o => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+
                   <Button
                     variant="outline"
                     size="sm"
-                    className="lg:hidden rounded-xl"
-                    onClick={() => setIsFilterOpen(true)}
+                    className="lg:hidden h-10 rounded-xl gap-1.5"
+                    onClick={() => setDrawerOpen(true)}
                   >
-                    <SlidersHorizontal className="w-4 h-4 ml-2" />
+                    <SlidersHorizontal className="w-4 h-4" />
                     فیلتر
                   </Button>
-                  
-                  {/* Sort Dropdown */}
-                  <select
-                    value={sortBy}
-                    onChange={e => setSortBy(e.target.value)}
-                    className="bg-card border border-border rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                  >
-                    <option value="newest">جدیدترین</option>
-                    <option value="bestsellers">پرفروش‌ترین</option>
-                    <option value="price-low">ارزان‌ترین</option>
-                    <option value="price-high">گران‌ترین</option>
-                    <option value="rating">بالاترین امتیاز</option>
-                  </select>
-                </div>
-
-                {/* View Mode Toggle */}
-                <div className="hidden sm:flex items-center gap-1 bg-muted rounded-xl p-1">
-                  <button
-                    onClick={() => setViewMode('grid')}
-                    className={`p-2 rounded-lg transition-colors ${
-                      viewMode === 'grid' ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground'
-                    }`}
-                  >
-                    <Grid3X3 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setViewMode('list')}
-                    className={`p-2 rounded-lg transition-colors ${
-                      viewMode === 'list' ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground'
-                    }`}
-                  >
-                    <LayoutList className="w-4 h-4" />
-                  </button>
                 </div>
               </div>
 
-              {/* Active Filters */}
-              {(selectedCategory || searchQuery) && (
-                <div className="flex flex-wrap gap-2 mb-6">
-                  {selectedCategory && (
-                    <span className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1.5 rounded-full text-sm">
-                      {currentCategory?.name}
-                      <button onClick={() => setSelectedCategory(null)}>
+              {/* Active filter chips */}
+              {hasFilters && (
+                <div className="flex flex-wrap gap-2 mb-5">
+                  {category && (
+                    <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary px-3 py-1.5 rounded-full text-sm">
+                      {categories.find(c => c.slug === category)?.name ?? category}
+                      <button onClick={() => handleCategory('')} aria-label="حذف فیلتر دسته">
                         <X className="w-3 h-3" />
                       </button>
                     </span>
                   )}
-                  {searchQuery && (
-                    <span className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1.5 rounded-full text-sm">
-                      جستجو: {searchQuery}
+                  {search && (
+                    <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary px-3 py-1.5 rounded-full text-sm">
+                      جستجو: {search}
+                      <button onClick={() => handleSearchChange('')} aria-label="پاک کردن جستجو">
+                        <X className="w-3 h-3" />
+                      </button>
                     </span>
                   )}
+                  <button
+                    onClick={clearFilters}
+                    className="text-xs text-muted-foreground hover:text-destructive transition-colors px-2"
+                  >
+                    پاک کردن همه
+                  </button>
                 </div>
               )}
 
-              {/* Products */}
-              {filteredProducts.length > 0 ? (
-                <div className={`grid gap-4 md:gap-6 ${
-                  viewMode === 'grid' 
-                    ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-3' 
-                    : 'grid-cols-1'
-                }`}>
-                  {filteredProducts.map((product, i) => (
-                    <ProductCard key={product.id} product={product} index={i} />
+              {/* Products count */}
+              {!loading && !error && (
+                <p className="text-sm text-muted-foreground mb-5">
+                  {displayed.length.toLocaleString('fa-IR')} محصول یافت شد
+                </p>
+              )}
+
+              {/* Content states */}
+              {loading ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+                  {Array.from({ length: 9 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="bg-card rounded-2xl border border-border/40 overflow-hidden animate-pulse"
+                    >
+                      <div className="aspect-4/3 bg-muted" />
+                      <div className="p-4 space-y-2">
+                        <div className="h-3 bg-muted rounded w-1/3" />
+                        <div className="h-4 bg-muted rounded w-4/5" />
+                        <div className="h-4 bg-muted rounded w-2/5" />
+                      </div>
+                    </div>
                   ))}
                 </div>
-              ) : (
-                <div className="text-center py-16">
-                  <p className="text-muted-foreground text-lg mb-4">محصولی یافت نشد</p>
+              ) : error ? (
+                <div className="text-center py-20">
+                  <p className="text-muted-foreground mb-4">خطا در دریافت محصولات</p>
                   <Button
                     variant="outline"
-                    onClick={() => {
-                      setSelectedCategory(null)
-                      setPriceRange([0, 3000000])
-                    }}
                     className="rounded-xl"
+                    onClick={() => window.location.reload()}
                   >
-                    پاک کردن فیلترها
+                    تلاش مجدد
                   </Button>
+                </div>
+              ) : displayed.length === 0 ? (
+                <div className="text-center py-20 bg-card rounded-2xl border border-border">
+                  <p className="text-muted-foreground mb-4">محصولی یافت نشد</p>
+                  {hasFilters && (
+                    <Button variant="outline" className="rounded-xl" onClick={clearFilters}>
+                      پاک کردن فیلترها
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+                  {displayed.map((product, i) => (
+                    <PublicProductCard key={product.id} product={product} index={i} />
+                  ))}
                 </div>
               )}
             </div>
           </div>
         </div>
+      </main>
 
-        {/* Mobile Filter Drawer */}
-        {isFilterOpen && (
-          <div className="fixed inset-0 z-50 lg:hidden">
-            <div 
-              className="absolute inset-0 bg-foreground/50"
-              onClick={() => setIsFilterOpen(false)}
+      {/* ── Mobile filter drawer ────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {drawerOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-foreground/40 z-40 lg:hidden"
+              onClick={() => setDrawerOpen(false)}
             />
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
-              className="absolute right-0 top-0 bottom-0 w-80 bg-card p-6 overflow-y-auto"
+              transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+              className="fixed right-0 top-0 bottom-0 w-72 bg-card z-50 p-6 overflow-y-auto shadow-xl lg:hidden"
             >
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-bold text-lg">فیلترها</h2>
-                <button onClick={() => setIsFilterOpen(false)}>
-                  <X className="w-5 h-5" />
+                <button onClick={() => setDrawerOpen(false)} aria-label="بستن فیلتر">
+                  <X className="w-5 h-5 text-muted-foreground" />
                 </button>
               </div>
 
-              {/* Categories */}
-              <div className="mb-6">
-                <h3 className="font-bold text-foreground mb-4">دسته‌بندی</h3>
-                <div className="space-y-2">
+              <h3 className="font-semibold text-sm text-foreground mb-3">دسته‌بندی</h3>
+              <div className="space-y-1 mb-6">
+                <button
+                  onClick={() => handleCategory('')}
+                  className={`w-full text-right px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                    !category
+                      ? 'bg-primary/10 text-primary font-medium'
+                      : 'text-muted-foreground hover:bg-muted'
+                  }`}
+                >
+                  همه محصولات
+                </button>
+                {categories.map(cat => (
                   <button
-                    onClick={() => {
-                      setSelectedCategory(null)
-                      setIsFilterOpen(false)
-                    }}
-                    className={`w-full text-right px-3 py-2 rounded-lg transition-colors ${
-                      !selectedCategory ? 'bg-primary/10 text-primary' : 'hover:bg-muted text-muted-foreground'
+                    key={cat.slug}
+                    onClick={() => handleCategory(cat.slug)}
+                    className={`w-full text-right px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                      category === cat.slug
+                        ? 'bg-primary/10 text-primary font-medium'
+                        : 'text-muted-foreground hover:bg-muted'
                     }`}
                   >
-                    همه محصولات
+                    {cat.name}
                   </button>
-                  {categories.map(cat => (
-                    <button
-                      key={cat.id}
-                      onClick={() => {
-                        setSelectedCategory(cat.slug)
-                        setIsFilterOpen(false)
-                      }}
-                      className={`w-full text-right px-3 py-2 rounded-lg transition-colors ${
-                        selectedCategory === cat.slug ? 'bg-primary/10 text-primary' : 'hover:bg-muted text-muted-foreground'
-                      }`}
-                    >
-                      {cat.name}
-                    </button>
-                  ))}
-                </div>
+                ))}
               </div>
 
-              {/* Price Range */}
-              <div className="mb-6">
-                <h3 className="font-bold text-foreground mb-4">محدوده قیمت</h3>
-                <div className="space-y-4">
-                  <div className="flex gap-2">
-                    <Input
-                      type="number"
-                      placeholder="از"
-                      value={priceRange[0]}
-                      onChange={e => setPriceRange([Number(e.target.value), priceRange[1]])}
-                      className="text-center"
-                    />
-                    <Input
-                      type="number"
-                      placeholder="تا"
-                      value={priceRange[1]}
-                      onChange={e => setPriceRange([priceRange[0], Number(e.target.value)])}
-                      className="text-center"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <Button 
-                className="w-full rounded-xl"
-                onClick={() => setIsFilterOpen(false)}
-              >
-                اعمال فیلترها
+              <Button className="w-full rounded-xl" onClick={() => setDrawerOpen(false)}>
+                اعمال فیلتر
               </Button>
             </motion.div>
-          </div>
+          </>
         )}
-      </main>
+      </AnimatePresence>
 
       <Footer />
     </div>
   )
 }
 
+// ─── Page export (Suspense required for useSearchParams) ─────────────────────
+
 export default function ProductsPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center" dir="rtl">
+          <div className="flex items-center gap-3 text-muted-foreground">
+            <span className="w-5 h-5 border-2 border-muted border-t-primary rounded-full animate-spin" />
+            <span className="text-sm">در حال بارگذاری...</span>
+          </div>
+        </div>
+      }
+    >
       <ProductsContent />
     </Suspense>
   )

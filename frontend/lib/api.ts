@@ -3,6 +3,7 @@ import type { Category, CreateCategoryInput, UpdateCategoryInput } from '@/types
 import type { Product, CreateProductInput, UpdateProductInput } from '@/types/product'
 import type { InventoryItem, InventoryAdjustment, AdjustStockInput, AdjustStockResult } from '@/types/inventory'
 import type { Order, OrderListItem, OrderStatus, UpdatedOrderStatus } from '@/types/order'
+import type { PublicProduct, GetPublicProductsParams } from '@/types/public-product'
 import { getToken } from '@/lib/auth'
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000'
@@ -181,4 +182,25 @@ export async function updateAdminOrderStatus(
     body: JSON.stringify({ orderStatus }),
   })
   return data.order
+}
+
+// ─── Public Product Catalog ───────────────────────────────────────────────────
+
+export async function getPublicProducts(
+  params?: GetPublicProductsParams,
+): Promise<PublicProduct[]> {
+  const qs = new URLSearchParams()
+  if (params?.search) qs.set('search', params.search)
+  if (params?.category) qs.set('category', params.category)
+  if (params?.sort) qs.set('sort', params.sort)
+  const query = qs.toString()
+  const data = await apiFetch<{ products: PublicProduct[] }>(
+    `/api/products${query ? `?${query}` : ''}`,
+  )
+  return data.products
+}
+
+export async function getPublicProductBySlug(slug: string): Promise<PublicProduct> {
+  const data = await apiFetch<{ product: PublicProduct }>(`/api/products/${slug}`)
+  return data.product
 }
