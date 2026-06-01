@@ -1,5 +1,6 @@
 import express from 'express'
 import cors from 'cors'
+import type { CorsOptions } from 'cors'
 import helmet from 'helmet'
 import morgan from 'morgan'
 import path from 'path'
@@ -16,19 +17,49 @@ import mediaRouter from './modules/media/media.routes'
 
 const app = express()
 
-// Allowed CORS origins: always include local dev, plus the deployed frontend URL when set
-const corsOrigins = ['http://localhost:3000', 'http://localhost:3001']
-if (env.FRONTEND_URL) corsOrigins.push(env.FRONTEND_URL)
+// ─── CORS ─────────────────────────────────────────────────────────────────────
+// Build the allowed-origins list. The Vercel URL is hardcoded as a safety net
+// so it works even if the FRONTEND_URL env var has a typo or trailing space.
+const ALLOWED_ORIGINS = new Set([
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'https://pharmacy-platform-lilac.vercel.app', // production frontend
+])
 
-app.use(cors({ origin: corsOrigins, credentials: true }))
+// Also add whatever is in FRONTEND_URL (trimmed) — covers future redeploys
+const frontendUrl = env.FRONTEND_URL.trim()
+if (frontendUrl) ALLOWED_ORIGINS.add(frontendUrl)
+
+const corsOptions: CorsOptions = {
+  origin: (origin, callback) => {
+    // Allow server-to-server requests (no Origin header) and curl/Postman
+    if (!origin) return callback(null, true)
+    if (ALLOWED_ORIGINS.has(origin)) return callback(null, true)
+    callback(new Error(`CORS: origin ${origin} is not allowed`))
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 200, // some legacy browsers choke on 204
+}
+
+// Explicit preflight handler — must be registered BEFORE any routes or other middleware
+app.options('*', cors(corsOptions))
+// Apply CORS headers to all other requests
+app.use(cors(corsOptions))
+
+// ─── Other middleware ──────────────────────────────────────────────────────────
 // Allow cross-origin image loading so the frontend domain can load /uploads/* files
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }))
+app.use(express.json())
 app.use(morgan('dev'))
 
+// ─── Health check ─────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
   res.json({ success: true, message: 'OK' })
 })
 
+// ─── Routes ───────────────────────────────────────────────────────────────────
 app.use('/api/admin/auth', authRoutes)
 app.use('/api/admin/categories', categoryRoutes)
 app.use('/api/admin/products', adminProductRouter)
