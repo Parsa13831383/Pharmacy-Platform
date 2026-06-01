@@ -4,6 +4,12 @@ import type { Product, CreateProductInput, UpdateProductInput } from '@/types/pr
 import type { InventoryItem, InventoryAdjustment, AdjustStockInput, AdjustStockResult } from '@/types/inventory'
 import type { Order, OrderListItem, OrderStatus, UpdatedOrderStatus } from '@/types/order'
 import type { PublicProduct, GetPublicProductsParams } from '@/types/public-product'
+import type {
+  SendOtpResponse,
+  VerifyOtpResponse,
+  CreateOrderPayload,
+  CreateOrderResponse,
+} from '@/types/checkout'
 import { getToken } from '@/lib/auth'
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000'
@@ -203,4 +209,32 @@ export async function getPublicProducts(
 export async function getPublicProductBySlug(slug: string): Promise<PublicProduct> {
   const data = await apiFetch<{ product: PublicProduct }>(`/api/products/${slug}`)
   return data.product
+}
+
+// ─── Checkout ─────────────────────────────────────────────────────────────────
+
+export async function sendCheckoutOtp(phone: string): Promise<SendOtpResponse> {
+  return apiFetch<SendOtpResponse>('/api/checkout/send-otp', {
+    method: 'POST',
+    body: JSON.stringify({ phone }),
+  })
+}
+
+export async function verifyCheckoutOtp(
+  phone: string,
+  code: string,
+): Promise<VerifyOtpResponse> {
+  return apiFetch<VerifyOtpResponse>('/api/checkout/verify-otp', {
+    method: 'POST',
+    body: JSON.stringify({ phone, code }),
+  })
+}
+
+export async function createCheckoutOrder(
+  payload: CreateOrderPayload,
+): Promise<CreateOrderResponse> {
+  return apiFetch<CreateOrderResponse>('/api/checkout/order', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
 }

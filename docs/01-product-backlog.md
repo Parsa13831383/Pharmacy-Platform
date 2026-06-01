@@ -80,7 +80,7 @@ Uses:
 
 ---
 
-## F5 — Customer Product Catalog
+## F5 — Customer Product Catalog ✅
 
 Status: Planned
 
@@ -100,10 +100,9 @@ Uses:
 
 * GET /api/products
 * GET /api/products/:slug
-
 ---
 
-## F6 — Cart & Checkout UI
+## F6 — Cart & Checkout UI ✅
 
 Status: Planned
 
