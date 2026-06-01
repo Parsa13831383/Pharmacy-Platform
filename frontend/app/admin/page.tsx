@@ -15,8 +15,8 @@ const ROLE_LABELS: Record<string, string> = {
 const CARDS = [
   { icon: Package, label: 'محصولات', desc: 'مدیریت محصولات فروشگاه', href: '/admin/products' },
   { icon: Tag, label: 'دسته‌بندی‌ها', desc: 'مدیریت دسته‌بندی‌ها', href: '/admin/categories' },
-  { icon: Archive, label: 'موجودی', desc: 'کنترل موجودی انبار', href: null },
-  { icon: ShoppingBag, label: 'سفارش‌ها', desc: 'پیگیری سفارشات', href: null },
+  { icon: Archive, label: 'موجودی', desc: 'کنترل موجودی انبار', href: '/admin/inventory' },
+  { icon: ShoppingBag, label: 'سفارش‌ها', desc: 'پیگیری سفارشات', href: '/admin/orders' },
 ]
 
 export default function AdminDashboardPage() {

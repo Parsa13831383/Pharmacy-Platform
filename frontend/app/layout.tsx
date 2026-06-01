@@ -3,6 +3,7 @@ import { Vazirmatn, Playfair_Display } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { CartProvider } from '@/lib/cart-context'
+import { LoadingWrapper } from '@/components/loading-wrapper'
 
 const vazirmatn = Vazirmatn({ 
   subsets: ['arabic', 'latin'],
@@ -54,9 +55,11 @@ export default function RootLayout({
   return (
     <html lang="fa" dir="rtl" className="bg-background">
       <body className={`${vazirmatn.variable} ${playfair.variable} font-sans antialiased`}>
-        <CartProvider>
-          {children}
-        </CartProvider>
+        <LoadingWrapper>
+          <CartProvider>
+            {children}
+          </CartProvider>
+        </LoadingWrapper>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

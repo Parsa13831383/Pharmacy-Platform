@@ -85,7 +85,7 @@ Allow customers to browse and purchase products easily.
 
 ---
 
-# EPIC 3 — Guest Checkout & Order Flow
+# EPIC 3 — Guest Checkout & Order Flow ✅
 
 ## Goal
 
@@ -126,7 +126,7 @@ Allow users to place secure orders without account creation.
 
 ---
 
-# EPIC 4 — Product Management System
+# EPIC 4 — Product Management System ✅
 
 ## Goal
 
@@ -161,7 +161,7 @@ Allow pharmacy owner and staff to manage products easily.
 
 ---
 
-# EPIC 5 — Inventory & Stock Protection
+# EPIC 5 — Inventory & Stock Protection ✅
 
 ## Goal
 
@@ -286,7 +286,7 @@ Support secure online payments.
 
 ---
 
-# EPIC 8 — Admin Authentication & Permissions
+# EPIC 8 — Admin Authentication & Permissions ✅
 
 ## Goal
 

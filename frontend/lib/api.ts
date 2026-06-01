@@ -1,6 +1,8 @@
 import type { Admin, LoginResponse } from '@/types/admin'
 import type { Category, CreateCategoryInput, UpdateCategoryInput } from '@/types/category'
 import type { Product, CreateProductInput, UpdateProductInput } from '@/types/product'
+import type { InventoryItem, InventoryAdjustment, AdjustStockInput, AdjustStockResult } from '@/types/inventory'
+import type { Order, OrderListItem, OrderStatus, UpdatedOrderStatus } from '@/types/order'
 import { getToken } from '@/lib/auth'
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000'
@@ -119,4 +121,64 @@ export async function deactivateProduct(id: string): Promise<Product> {
     headers: authHeaders(),
   })
   return data.product
+}
+
+// ─── Inventory ───────────────────────────────────────────────────────────────
+
+export async function getInventory(): Promise<InventoryItem[]> {
+  const data = await apiFetch<{ inventory: InventoryItem[] }>('/api/admin/inventory', {
+    headers: authHeaders(),
+  })
+  return data.inventory
+}
+
+export async function getLowStockInventory(): Promise<InventoryItem[]> {
+  const data = await apiFetch<{ products: InventoryItem[] }>('/api/admin/inventory/low-stock', {
+    headers: authHeaders(),
+  })
+  return data.products
+}
+
+export async function adjustInventoryStock(input: AdjustStockInput): Promise<AdjustStockResult> {
+  return apiFetch<AdjustStockResult>('/api/admin/inventory/adjust', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(input),
+  })
+}
+
+export async function getInventoryHistory(productId: string): Promise<InventoryAdjustment[]> {
+  const data = await apiFetch<{ history: InventoryAdjustment[] }>(
+    `/api/admin/inventory/${productId}/history`,
+    { headers: authHeaders() },
+  )
+  return data.history
+}
+
+// ─── Orders ──────────────────────────────────────────────────────────────────
+
+export async function getAdminOrders(): Promise<OrderListItem[]> {
+  const data = await apiFetch<{ orders: OrderListItem[] }>('/api/admin/orders', {
+    headers: authHeaders(),
+  })
+  return data.orders
+}
+
+export async function getAdminOrderById(id: string): Promise<Order> {
+  const data = await apiFetch<{ order: Order }>(`/api/admin/orders/${id}`, {
+    headers: authHeaders(),
+  })
+  return data.order
+}
+
+export async function updateAdminOrderStatus(
+  id: string,
+  orderStatus: OrderStatus,
+): Promise<UpdatedOrderStatus> {
+  const data = await apiFetch<{ order: UpdatedOrderStatus }>(`/api/admin/orders/${id}/status`, {
+    method: 'PATCH',
+    headers: authHeaders(),
+    body: JSON.stringify({ orderStatus }),
+  })
+  return data.order
 }
