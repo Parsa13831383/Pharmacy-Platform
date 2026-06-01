@@ -1,6 +1,5 @@
 import express from 'express'
 import cors from 'cors'
-import type { CorsOptions } from 'cors'
 import helmet from 'helmet'
 import morgan from 'morgan'
 import path from 'path'
@@ -17,42 +16,69 @@ import mediaRouter from './modules/media/media.routes'
 
 const app = express()
 
-// ─── CORS ─────────────────────────────────────────────────────────────────────
-// Build the allowed-origins list. The Vercel URL is hardcoded as a safety net
-// so it works even if the FRONTEND_URL env var has a typo or trailing space.
-const ALLOWED_ORIGINS = new Set([
+// ─── CORS allowed origins ─────────────────────────────────────────────────────
+// The Vercel URL is hardcoded so it works even if FRONTEND_URL env var is wrong.
+// env.FRONTEND_URL (trimmed) is added on top to cover future domain changes.
+const allowedOrigins: string[] = [
   'http://localhost:3000',
   'http://localhost:3001',
-  'https://pharmacy-platform-lilac.vercel.app', // production frontend
-])
-
-// Also add whatever is in FRONTEND_URL (trimmed) — covers future redeploys
-const frontendUrl = env.FRONTEND_URL.trim()
-if (frontendUrl) ALLOWED_ORIGINS.add(frontendUrl)
-
-const corsOptions: CorsOptions = {
-  origin: (origin, callback) => {
-    // Allow server-to-server requests (no Origin header) and curl/Postman
-    if (!origin) return callback(null, true)
-    if (ALLOWED_ORIGINS.has(origin)) return callback(null, true)
-    callback(new Error(`CORS: origin ${origin} is not allowed`))
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  optionsSuccessStatus: 200, // some legacy browsers choke on 204
+  'http://localhost:3002',
+  'https://pharmacy-platform-lilac.vercel.app',
+]
+const configuredFrontend = env.FRONTEND_URL.trim()
+if (configuredFrontend && !allowedOrigins.includes(configuredFrontend)) {
+  allowedOrigins.push(configuredFrontend)
 }
 
-// Explicit preflight handler — must be registered BEFORE any routes or other middleware
-app.options('*', cors(corsOptions))
-// Apply CORS headers to all other requests
-app.use(cors(corsOptions))
+// ─── Request logger ───────────────────────────────────────────────────────────
+app.use((req, _res, next) => {
+  console.log(`[${req.method}] ${req.path} origin=${req.headers['origin'] ?? 'none'}`)
+  next()
+})
+
+// ─── Preflight — Express-5-safe middleware (no app.options('*')) ───────────────
+// app.options('*', ...) uses a bare wildcard that no longer works in Express 5.
+// This plain middleware intercepts every OPTIONS request before any route is reached.
+app.use((req, res, next) => {
+  if (req.method !== 'OPTIONS') { next(); return }
+  const origin = req.headers['origin']
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin)
+    res.setHeader('Vary', 'Origin')
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS')
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+  }
+  res.sendStatus(204)
+})
+
+// ─── CORS headers for all non-OPTIONS requests ────────────────────────────────
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin) return callback(null, true)       // curl / Postman / server-to-server
+    if (allowedOrigins.includes(origin)) return callback(null, true)
+    console.error('[CORS] Blocked origin:', origin)
+    return callback(new Error(`CORS blocked: ${origin}`))
+  },
+  credentials: false,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 204,
+}))
 
 // ─── Other middleware ──────────────────────────────────────────────────────────
-// Allow cross-origin image loading so the frontend domain can load /uploads/* files
+// crossOriginResourcePolicy: cross-origin allows the frontend to load /uploads/* images
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }))
 app.use(express.json())
 app.use(morgan('dev'))
+
+// ─── Debug route — remove after confirming CORS works in production ────────────
+app.get('/debug/cors', (req, res) => {
+  res.json({
+    success: true,
+    origin: req.headers['origin'] ?? null,
+    allowedOrigins,
+  })
+})
 
 // ─── Health check ─────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
@@ -73,8 +99,7 @@ app.use('/api/orders', publicOrderRouter)
 app.use('/api/promotions', publicPromotionRouter)
 app.use('/api/admin/media', mediaRouter)
 // NOTE: /uploads is served from the local filesystem for the demo only.
-// In production, move media uploads to an object-storage service (S3, Cloudflare R2, etc.)
-// and update media.controller.ts to use cloud URLs instead of building local ones.
+// For production, move to object storage (S3, Cloudflare R2, etc.).
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')))
 
 export default app
