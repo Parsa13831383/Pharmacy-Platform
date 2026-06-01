@@ -8,8 +8,9 @@ import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
 import { PublicProductCard } from '@/components/public-product-card'
 import { Button } from '@/components/ui/button'
-import { getPublicProducts } from '@/lib/api'
+import { getPublicProducts, getPublicPromotions, getFeaturedPromotionProducts } from '@/lib/api'
 import type { PublicProduct } from '@/types/public-product'
+import type { PublicPromotion, FeaturedProduct } from '@/types/promotion'
 
 // ─── Static category cards ────────────────────────────────────────────────────
 
@@ -56,12 +57,22 @@ const TRUST_ITEMS = [
 export default function HomePage() {
   const [latestProducts, setLatestProducts] = useState<PublicProduct[]>([])
   const [productsLoading, setProductsLoading] = useState(true)
+  const [promotions, setPromotions] = useState<PublicPromotion[]>([])
+  const [featuredProducts, setFeaturedProducts] = useState<FeaturedProduct[]>([])
 
   useEffect(() => {
     getPublicProducts({ sort: 'newest' })
       .then(data => setLatestProducts(data.slice(0, 6)))
-      .catch(() => {/* silently hide section on error */})
+      .catch(() => {})
       .finally(() => setProductsLoading(false))
+
+    getPublicPromotions()
+      .then(setPromotions)
+      .catch(() => {})
+
+    getFeaturedPromotionProducts()
+      .then(setFeaturedProducts)
+      .catch(() => {})
   }, [])
 
   return (
@@ -150,6 +161,48 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* ── Promotion banners ─────────────────────────────────────────────── */}
+        {promotions.length > 0 && (
+          <section className="py-8 bg-secondary/10">
+            <div className="container mx-auto px-4">
+              <div className="flex items-center gap-2 mb-4">
+                <Sparkles className="w-4 h-4 text-primary" />
+                <h2 className="text-base font-semibold text-foreground">جشنواره‌های فعال</h2>
+              </div>
+              <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap">
+                {promotions.map((promo, i) => (
+                  <motion.div
+                    key={promo.id}
+                    initial={{ opacity: 0, x: 20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.08 }}
+                    className="shrink-0 md:shrink"
+                  >
+                    <Link
+                      href={`/promotions/${promo.slug}`}
+                      className="block bg-linear-to-br from-primary/15 to-primary/5 border border-primary/20 hover:border-primary/40 hover:shadow-sm rounded-2xl px-5 py-4 min-w-50 transition-all duration-300 group"
+                    >
+                      <p className="font-bold text-foreground group-hover:text-primary transition-colors">
+                        {promo.title}
+                      </p>
+                      {promo.bannerText && (
+                        <p className="text-primary text-sm font-medium mt-0.5">{promo.bannerText}</p>
+                      )}
+                      {promo.description && (
+                        <p className="text-muted-foreground text-xs mt-1 line-clamp-1">
+                          {promo.description}
+                        </p>
+                      )}
+                      <span className="text-xs text-primary mt-2 block">مشاهده محصولات ←</span>
+                    </Link>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* ── Category cards ────────────────────────────────────────────────── */}
         <section className="py-16 md:py-20">
           <div className="container mx-auto px-4">
@@ -191,6 +244,83 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
+        {/* ── Featured promotional products ─────────────────────────────────── */}
+        {featuredProducts.length > 0 && (
+          <section className="py-16 md:py-20">
+            <div className="container mx-auto px-4">
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="flex items-end justify-between mb-10"
+              >
+                <div>
+                  <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-medium mb-3">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    پیشنهادهای ویژه
+                  </div>
+                  <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+                    محصولات جشنواره
+                  </h2>
+                </div>
+                <Link href="/products" className="hidden sm:block">
+                  <Button variant="outline" className="rounded-xl gap-2">
+                    مشاهده همه
+                    <ArrowLeft className="w-4 h-4" />
+                  </Button>
+                </Link>
+              </motion.div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                {featuredProducts.map((p, i) => (
+                  <motion.div
+                    key={p.id}
+                    initial={{ opacity: 0, y: 18 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: Math.min(i * 0.06, 0.3), duration: 0.45 }}
+                  >
+                    <Link href={`/products/${p.slug}`} className="group block h-full">
+                      <div className="bg-card rounded-2xl border border-border/60 hover:border-primary/30 hover:shadow-md transition-all duration-300 h-full flex flex-col overflow-hidden">
+                        <div className="relative aspect-4/3 bg-linear-to-br from-primary/5 to-primary/15 flex items-center justify-center">
+                          <Sparkles className="w-10 h-10 text-primary/20 group-hover:text-primary/30 transition-colors" strokeWidth={1.5} />
+                          {p.discountedPrice != null && (
+                            <span className="absolute top-3 right-3 bg-destructive text-destructive-foreground text-xs px-2.5 py-1 rounded-full font-medium">
+                              تخفیف
+                            </span>
+                          )}
+                        </div>
+                        <div className="p-4 flex flex-col gap-2 flex-1">
+                          {p.brand && <p className="text-xs text-muted-foreground">{p.brand}</p>}
+                          <h3 className="font-medium text-foreground text-sm leading-relaxed line-clamp-2 flex-1">
+                            {p.name}
+                          </h3>
+                          <div className="flex items-baseline gap-2 pt-1">
+                            {p.discountedPrice != null ? (
+                              <>
+                                <span className="font-bold text-foreground text-sm">
+                                  {Number(p.discountedPrice).toLocaleString('fa-IR')} تومان
+                                </span>
+                                <span className="text-xs text-muted-foreground line-through">
+                                  {Number(p.price).toLocaleString('fa-IR')} تومان
+                                </span>
+                              </>
+                            ) : (
+                              <span className="font-bold text-foreground text-sm">
+                                {Number(p.price).toLocaleString('fa-IR')} تومان
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* ── Latest products ───────────────────────────────────────────────── */}
         <section className="py-16 md:py-20 bg-secondary/20">

@@ -126,7 +126,7 @@ Uses:
 
 ---
 
-## F7 — Order Tracking UI
+## F7 — Order Tracking UI ✅
 
 Status: Planned
 
@@ -146,7 +146,7 @@ Uses:
 
 # Phase 2 — Business Enhancements
 
-## EPIC 6 — Discounts & Promotions
+## EPIC 6 — Discounts & Promotions ✅
 
 ### Features
 

@@ -5,6 +5,13 @@ import type { InventoryItem, InventoryAdjustment, AdjustStockInput, AdjustStockR
 import type { Order, OrderListItem, OrderStatus, UpdatedOrderStatus, PublicOrder } from '@/types/order'
 import type { PublicProduct, GetPublicProductsParams } from '@/types/public-product'
 import type {
+  Promotion,
+  PublicPromotion,
+  FeaturedProduct,
+  CreatePromotionInput,
+  UpdatePromotionInput,
+} from '@/types/promotion'
+import type {
   SendOtpResponse,
   VerifyOtpResponse,
   CreateOrderPayload,
@@ -246,4 +253,89 @@ export async function getPublicOrderByNumber(orderNumber: string): Promise<Publi
     `/api/orders/${encodeURIComponent(orderNumber)}`,
   )
   return data.order
+}
+
+// ─── Admin Promotions ─────────────────────────────────────────────────────────
+
+export async function getAdminPromotions(): Promise<Promotion[]> {
+  const data = await apiFetch<{ promotions: Promotion[] }>('/api/admin/promotions', {
+    headers: authHeaders(),
+  })
+  return data.promotions
+}
+
+export async function getAdminPromotionById(id: string): Promise<Promotion> {
+  const data = await apiFetch<{ promotion: Promotion }>(`/api/admin/promotions/${id}`, {
+    headers: authHeaders(),
+  })
+  return data.promotion
+}
+
+export async function createPromotion(input: CreatePromotionInput): Promise<Promotion> {
+  const data = await apiFetch<{ promotion: Promotion }>('/api/admin/promotions', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(input),
+  })
+  return data.promotion
+}
+
+export async function updatePromotion(id: string, input: UpdatePromotionInput): Promise<Promotion> {
+  const data = await apiFetch<{ promotion: Promotion }>(`/api/admin/promotions/${id}`, {
+    method: 'PATCH',
+    headers: authHeaders(),
+    body: JSON.stringify(input),
+  })
+  return data.promotion
+}
+
+export async function deactivatePromotion(id: string): Promise<Promotion> {
+  const data = await apiFetch<{ promotion: Promotion }>(`/api/admin/promotions/${id}/deactivate`, {
+    method: 'PATCH',
+    headers: authHeaders(),
+  })
+  return data.promotion
+}
+
+export async function addProductsToPromotion(
+  promotionId: string,
+  productIds: string[],
+): Promise<Promotion> {
+  const data = await apiFetch<{ promotion: Promotion }>(
+    `/api/admin/promotions/${promotionId}/products`,
+    {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ productIds }),
+    },
+  )
+  return data.promotion
+}
+
+export async function removeProductFromPromotion(
+  promotionId: string,
+  productId: string,
+): Promise<Promotion> {
+  const data = await apiFetch<{ promotion: Promotion }>(
+    `/api/admin/promotions/${promotionId}/products/${productId}`,
+    { method: 'DELETE', headers: authHeaders() },
+  )
+  return data.promotion
+}
+
+// ─── Public Promotions ────────────────────────────────────────────────────────
+
+export async function getPublicPromotions(): Promise<PublicPromotion[]> {
+  const data = await apiFetch<{ promotions: PublicPromotion[] }>('/api/promotions')
+  return data.promotions
+}
+
+export async function getPublicPromotionBySlug(slug: string): Promise<PublicPromotion> {
+  const data = await apiFetch<{ promotion: PublicPromotion }>(`/api/promotions/${slug}`)
+  return data.promotion
+}
+
+export async function getFeaturedPromotionProducts(): Promise<FeaturedProduct[]> {
+  const data = await apiFetch<{ products: FeaturedProduct[] }>('/api/promotions/featured/products')
+  return data.products
 }

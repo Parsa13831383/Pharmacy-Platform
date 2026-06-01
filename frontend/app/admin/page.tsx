@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Archive, Package, ShoppingBag, Tag } from 'lucide-react'
+import { Archive, Package, ShoppingBag, Sparkles, Tag } from 'lucide-react'
 import { AdminShell } from '@/components/admin/AdminShell'
 import { useAdminAuth } from '@/context/AdminAuthContext'
 import { cn } from '@/lib/utils'
@@ -17,6 +17,7 @@ const CARDS = [
   { icon: Tag, label: 'دسته‌بندی‌ها', desc: 'مدیریت دسته‌بندی‌ها', href: '/admin/categories' },
   { icon: Archive, label: 'موجودی', desc: 'کنترل موجودی انبار', href: '/admin/inventory' },
   { icon: ShoppingBag, label: 'سفارش‌ها', desc: 'پیگیری سفارشات', href: '/admin/orders' },
+  { icon: Sparkles, label: 'جشنواره‌ها', desc: 'مدیریت تخفیف‌ها و کمپین‌ها', href: '/admin/promotions' },
 ]
 
 export default function AdminDashboardPage() {

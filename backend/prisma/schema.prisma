@@ -99,9 +99,38 @@ model Product {
   category              Category?              @relation(fields: [categoryId], references: [id])
   orderItems            OrderItem[]
   inventoryAdjustments  InventoryAdjustment[]
+  promotions            PromotionProduct[]
 
   @@index([categoryId])
   @@index([isActive])
+}
+
+model Promotion {
+  id          String    @id @default(uuid())
+  title       String
+  slug        String    @unique
+  description String?
+  bannerText  String?
+  startsAt    DateTime?
+  endsAt      DateTime?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  products PromotionProduct[]
+}
+
+model PromotionProduct {
+  id          String @id @default(uuid())
+  promotionId String
+  productId   String
+
+  promotion Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([promotionId, productId])
+  @@index([promotionId])
+  @@index([productId])
 }
 
 model InventoryAdjustment {
