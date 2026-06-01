@@ -1,5 +1,15 @@
 import type { Category } from './category'
 
+export interface ProductImage {
+  id: string
+  productId: string
+  imageUrl: string
+  altText: string | null
+  sortOrder: number
+  isPrimary: boolean
+  createdAt: string
+}
+
 export interface Product {
   id: string
   name: string
@@ -14,6 +24,7 @@ export interface Product {
   isActive: boolean
   categoryId: string | null
   category: Category | null
+  images: ProductImage[]
   createdAt: string
   updatedAt: string
 }

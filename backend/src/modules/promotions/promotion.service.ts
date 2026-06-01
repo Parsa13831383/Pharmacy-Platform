@@ -31,10 +31,12 @@ const productSelect = {
 
 // ─── Admin ────────────────────────────────────────────────────────────────────
 
+const promoImageInclude = { images: { orderBy: { createdAt: 'asc' as const } } }
+
 export async function listAdminPromotions() {
   return prisma.promotion.findMany({
     orderBy: { createdAt: 'desc' },
-    include: { _count: { select: { products: true } } },
+    include: { _count: { select: { products: true } }, ...promoImageInclude },
   })
 }
 
@@ -47,6 +49,7 @@ export async function getAdminPromotionById(id: string) {
         orderBy: { id: 'asc' },
       },
       _count: { select: { products: true } },
+      ...promoImageInclude,
     },
   })
   if (!promotion) throw new AppError('Promotion not found', 404)
@@ -67,7 +70,7 @@ export async function createPromotion(input: CreatePromotionInput) {
       endsAt: input.endsAt ? new Date(input.endsAt) : null,
       isActive: input.isActive ?? true,
     },
-    include: { _count: { select: { products: true } } },
+    include: { _count: { select: { products: true } }, ...promoImageInclude },
   })
 }
 
@@ -95,7 +98,7 @@ export async function updatePromotion(id: string, input: UpdatePromotionInput) {
         endsAt: input.endsAt ? new Date(input.endsAt) : null,
       }),
     },
-    include: { _count: { select: { products: true } } },
+    include: { _count: { select: { products: true } }, ...promoImageInclude },
   })
 }
 
@@ -105,7 +108,7 @@ export async function deactivatePromotion(id: string) {
   return prisma.promotion.update({
     where: { id },
     data: { isActive: false },
-    include: { _count: { select: { products: true } } },
+    include: { _count: { select: { products: true } }, ...promoImageInclude },
   })
 }
 
@@ -148,6 +151,7 @@ export async function listPublicPromotions() {
   return prisma.promotion.findMany({
     where: activePromotionWhere(),
     orderBy: { createdAt: 'desc' },
+    include: { ...promoImageInclude },
   })
 }
 
@@ -161,6 +165,7 @@ export async function getPublicPromotionBySlug(slug: string) {
         include: { product: { select: productSelect } },
         orderBy: { id: 'asc' },
       },
+      ...promoImageInclude,
     },
   })
   if (!promotion) throw new AppError('Promotion not found', 404)

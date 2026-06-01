@@ -60,6 +60,7 @@ function PromotionProductCard({
         category: product.category
           ? { ...product.category, description: null, isActive: true, createdAt: '', updatedAt: '' }
           : null,
+        images: [],
         createdAt: '',
         updatedAt: '',
       },

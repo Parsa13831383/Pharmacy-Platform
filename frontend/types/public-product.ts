@@ -8,6 +8,14 @@ export interface PublicProductCategory {
   updatedAt: string
 }
 
+export interface PublicProductImage {
+  id: string
+  imageUrl: string
+  altText: string | null
+  isPrimary: boolean
+  sortOrder: number
+}
+
 /** Product returned from public catalog endpoints — prices are Decimal → serialised as string */
 export interface PublicProduct {
   id: string
@@ -23,6 +31,7 @@ export interface PublicProduct {
   isActive: boolean
   categoryId: string | null
   category: PublicProductCategory | null
+  images: PublicProductImage[]
   createdAt: string
   updatedAt: string
 }

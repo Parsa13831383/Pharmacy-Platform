@@ -10,8 +10,9 @@ import { Footer } from '@/components/layout/footer'
 import { PublicProductCard, fmtPrice } from '@/components/public-product-card'
 import { Button } from '@/components/ui/button'
 import { getPublicProductBySlug, getPublicProducts } from '@/lib/api'
+import { getMediaUrl } from '@/lib/media'
 import { useCart } from '@/lib/cart-context'
-import type { PublicProduct } from '@/types/public-product'
+import type { PublicProduct, PublicProductImage } from '@/types/public-product'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -48,16 +49,23 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1)
   const [added, setAdded] = useState(false)
 
+  // Image gallery state — must be at component level (React rules of hooks)
+  const [selectedImage, setSelectedImage] = useState<PublicProductImage | null>(null)
+
   useEffect(() => {
     if (!slug) return
     setLoading(true)
     setError('')
     setAdded(false)
     setQuantity(1)
+    setSelectedImage(null)
 
     getPublicProductBySlug(slug)
       .then(p => {
         setProduct(p)
+        // Set initial selected image: primary first, then first available
+        const imgs = p.images ?? []
+        setSelectedImage(imgs.find(i => i.isPrimary) ?? imgs[0] ?? null)
         // Fetch related: same category, newest, exclude self
         const catSlug = p.category?.slug
         getPublicProducts({ sort: 'newest', ...(catSlug ? { category: catSlug } : {}) })
@@ -79,6 +87,9 @@ export default function ProductDetailPage() {
     if (!product) return
     setQuantity(q => Math.min(Math.max(1, q + delta), product.stockQuantity || 1))
   }
+
+  const stock = product ? stockBadge(product.stockQuantity, product.lowStockThreshold) : null
+  const productImages = product?.images ?? []
 
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -123,17 +134,53 @@ export default function ProductDetailPage() {
             {/* ── Product section ───────────────────────────────────────────── */}
             <section className="container mx-auto px-4 py-8 md:py-12">
               <div className="grid md:grid-cols-2 gap-8 lg:gap-14 items-start">
-                {/* Image placeholder */}
+
+                {/* Image gallery */}
                 <motion.div
                   initial={{ opacity: 0, scale: 0.97 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.5 }}
-                  className={`aspect-square rounded-3xl bg-linear-to-br ${gradientFor(product.category?.slug)} flex items-center justify-center`}
+                  className="space-y-3"
                 >
-                  <Leaf
-                    className="w-24 h-24 text-primary/20"
-                    strokeWidth={1}
-                  />
+                  {/* Main image */}
+                  <div
+                    className={`aspect-square rounded-3xl overflow-hidden ${
+                      selectedImage ? 'bg-muted/30' : `bg-linear-to-br ${gradientFor(product.category?.slug)}`
+                    } flex items-center justify-center`}
+                  >
+                    {selectedImage ? (
+                      <img
+                        src={getMediaUrl(selectedImage.imageUrl)}
+                        alt={selectedImage.altText ?? product.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Leaf className="w-24 h-24 text-primary/20" strokeWidth={1} />
+                    )}
+                  </div>
+
+                  {/* Thumbnail strip — only shown when there are multiple images */}
+                  {productImages.length > 1 && (
+                    <div className="flex gap-2 overflow-x-auto pb-1">
+                      {productImages.map(img => (
+                        <button
+                          key={img.id}
+                          onClick={() => setSelectedImage(img)}
+                          className={`shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-colors ${
+                            selectedImage?.id === img.id
+                              ? 'border-primary'
+                              : 'border-border hover:border-primary/50'
+                          }`}
+                        >
+                          <img
+                            src={getMediaUrl(img.imageUrl)}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </motion.div>
 
                 {/* Product info */}
@@ -164,14 +211,11 @@ export default function ProductDetailPage() {
                   </h1>
 
                   {/* Stock badge */}
-                  {(() => {
-                    const s = stockBadge(product.stockQuantity, product.lowStockThreshold)
-                    return (
-                      <span className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full ${s.cls}`}>
-                        {s.text}
-                      </span>
-                    )
-                  })()}
+                  {stock && (
+                    <span className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full ${stock.cls}`}>
+                      {stock.text}
+                    </span>
+                  )}
 
                   {/* Price */}
                   <div className="space-y-1">
@@ -209,7 +253,6 @@ export default function ProductDetailPage() {
                   {/* Quantity + Add to cart */}
                   {product.stockQuantity > 0 && (
                     <div className="flex items-center gap-4 pt-2">
-                      {/* Quantity selector */}
                       <div className="flex items-center gap-1 bg-muted rounded-xl p-1">
                         <button
                           onClick={() => adjustQty(-1)}
@@ -232,7 +275,6 @@ export default function ProductDetailPage() {
                         </button>
                       </div>
 
-                      {/* Add button */}
                       <Button
                         onClick={handleAdd}
                         disabled={added}
@@ -259,7 +301,6 @@ export default function ProductDetailPage() {
                     </Button>
                   )}
 
-                  {/* Go to cart after adding */}
                   {added && (
                     <motion.div
                       initial={{ opacity: 0, y: 8 }}

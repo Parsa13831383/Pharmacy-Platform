@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useState, type FormEvent } from 'react'
-import { Edit2, Package, Plus, PowerOff, Sparkles, Trash2, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { getMediaUrl } from '@/lib/media'
+import { Edit2, Image as ImageIcon, Package, Plus, PowerOff, Sparkles, Trash2, X } from 'lucide-react'
 import { AdminShell } from '@/components/admin/AdminShell'
 import { Button } from '@/components/ui/button'
 import {
@@ -23,8 +24,10 @@ import {
   addProductsToPromotion,
   removeProductFromPromotion,
   getAdminProducts,
+  uploadPromotionImage,
+  deletePromotionImage,
 } from '@/lib/api'
-import type { Promotion, PromotionProductItem } from '@/types/promotion'
+import type { Promotion, PromotionImage, PromotionProductItem } from '@/types/promotion'
 import type { Product } from '@/types/product'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -34,13 +37,11 @@ function fmtDate(d: string | null | undefined): string {
   return new Date(d).toLocaleDateString('fa-IR', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
-// Convert ISO string to datetime-local input value
 function toLocalInput(iso: string | null | undefined): string {
   if (!iso) return ''
-  return iso.slice(0, 16) // "YYYY-MM-DDTHH:MM"
+  return iso.slice(0, 16)
 }
 
-// Convert datetime-local input value to ISO string
 function fromLocalInput(val: string): string | undefined {
   if (!val) return undefined
   return new Date(val).toISOString()
@@ -107,6 +108,14 @@ export default function PromotionsPage() {
   const [removingId, setRemovingId] = useState<string | null>(null)
   const [addingIds, setAddingIds] = useState<Set<string>>(new Set())
 
+  // Image management dialog
+  const [imagePromo, setImagePromo] = useState<Promotion | null>(null)
+  const [promoImages, setPromoImages] = useState<PromotionImage[]>([])
+  const [imageUploading, setImageUploading] = useState(false)
+  const [imageUploadError, setImageUploadError] = useState('')
+  const [deletingImageId, setDeletingImageId] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   useEffect(() => {
     getAdminPromotions()
       .then(setPromotions)
@@ -135,7 +144,7 @@ export default function PromotionsPage() {
       setForm(prev => ({ ...prev, [key]: e.target.value }))
   }
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const title = form.title.trim()
     const slug = form.slug.trim()
@@ -238,7 +247,6 @@ export default function PromotionsPage() {
     }
   }
 
-  // Filtered available products (not yet in promotion)
   const assignedIds = new Set(assignedProducts.map(ap => ap.productId))
   const availableProducts = allProducts.filter(p => {
     if (assignedIds.has(p.id)) return false
@@ -250,6 +258,46 @@ export default function PromotionsPage() {
       (p.sku ?? '').toLowerCase().includes(q)
     )
   })
+
+  // ── Image management dialog ────────────────────────────────────────────────
+
+  function openImageDialog(promo: Promotion) {
+    setImagePromo(promo)
+    setPromoImages(promo.images ?? [])
+    setImageUploadError('')
+  }
+
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !imagePromo) return
+    setImageUploading(true)
+    setImageUploadError('')
+    try {
+      const img = await uploadPromotionImage(imagePromo.id, file)
+      setPromoImages(prev => [...prev, img])
+      // refresh promotion list to update image counts
+      const updated = await getAdminPromotions()
+      setPromotions(updated)
+    } catch (err) {
+      setImageUploadError(err instanceof Error ? err.message : 'خطا در آپلود')
+    } finally {
+      setImageUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  async function handleDeletePromoImage(imageId: string) {
+    if (!imagePromo) return
+    setDeletingImageId(imageId)
+    try {
+      await deletePromotionImage(imagePromo.id, imageId)
+      setPromoImages(prev => prev.filter(img => img.id !== imageId))
+    } catch {
+      // silently fail
+    } finally {
+      setDeletingImageId(null)
+    }
+  }
 
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -304,7 +352,7 @@ export default function PromotionsPage() {
                 <th className="text-right px-6 py-3.5 font-medium text-muted-foreground hidden lg:table-cell">
                   محصولات
                 </th>
-                <th className="px-6 py-3.5 w-32" />
+                <th className="px-6 py-3.5 w-36" />
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -345,6 +393,15 @@ export default function PromotionsPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-1 justify-end">
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => openImageDialog(promo)}
+                        className="text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg"
+                        title="تصاویر جشنواره"
+                      >
+                        <ImageIcon className="w-3.5 h-3.5" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon-sm"
@@ -398,7 +455,6 @@ export default function PromotionsPage() {
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4 mt-1">
-            {/* Title */}
             <div className="space-y-2">
               <Label htmlFor="promo-title">عنوان *</Label>
               <Input
@@ -412,7 +468,6 @@ export default function PromotionsPage() {
               />
             </div>
 
-            {/* Slug */}
             <div className="space-y-2">
               <Label htmlFor="promo-slug">
                 اسلاگ *
@@ -429,7 +484,6 @@ export default function PromotionsPage() {
               />
             </div>
 
-            {/* Banner text */}
             <div className="space-y-2">
               <Label htmlFor="promo-banner">
                 متن بنر
@@ -445,7 +499,6 @@ export default function PromotionsPage() {
               />
             </div>
 
-            {/* Description */}
             <div className="space-y-2">
               <Label htmlFor="promo-desc">
                 توضیحات
@@ -461,7 +514,6 @@ export default function PromotionsPage() {
               />
             </div>
 
-            {/* Date range */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="promo-starts">تاریخ شروع</Label>
@@ -541,7 +593,6 @@ export default function PromotionsPage() {
             </div>
           ) : (
             <div className="flex-1 overflow-y-auto space-y-5 min-h-0">
-              {/* Assigned products */}
               <div>
                 <h3 className="text-sm font-semibold text-muted-foreground mb-2">
                   محصولات موجود در جشنواره ({assignedProducts.length})
@@ -585,7 +636,6 @@ export default function PromotionsPage() {
                 )}
               </div>
 
-              {/* Add products */}
               <div>
                 <h3 className="text-sm font-semibold text-muted-foreground mb-2">
                   افزودن محصول
@@ -643,6 +693,91 @@ export default function PromotionsPage() {
               onClick={() => setProductsDialogPromo(null)}
               className="rounded-xl"
             >
+              بستن
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Image management dialog ───────────────────────────────────────── */}
+      <Dialog open={!!imagePromo} onOpenChange={open => !open && setImagePromo(null)}>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="text-right">
+              تصاویر جشنواره: {imagePromo?.title}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-y-auto space-y-4 min-h-0">
+            <div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                className="hidden"
+                onChange={handleImageUpload}
+                disabled={imageUploading}
+              />
+              <Button
+                variant="outline"
+                className="w-full rounded-xl gap-2 border-dashed"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={imageUploading}
+              >
+                {imageUploading ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin" />
+                    در حال آپلود...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4" />
+                    افزودن تصویر بنر
+                  </>
+                )}
+              </Button>
+              {imageUploadError && (
+                <p className="text-destructive text-xs mt-1.5">{imageUploadError}</p>
+              )}
+            </div>
+
+            {promoImages.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                هیچ تصویری آپلود نشده است.
+              </p>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                {promoImages.map(img => (
+                  <div key={img.id} className="relative group rounded-xl overflow-hidden border border-border aspect-video">
+                    <img
+                      src={getMediaUrl(img.imageUrl)}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Button
+                        size="icon-sm"
+                        variant="destructive"
+                        onClick={() => handleDeletePromoImage(img.id)}
+                        disabled={deletingImageId === img.id}
+                        className="h-7 w-7 rounded-lg"
+                        title="حذف"
+                      >
+                        {deletingImageId === img.id ? (
+                          <span className="w-3 h-3 border-2 border-current/30 border-t-current rounded-full animate-spin" />
+                        ) : (
+                          <Trash2 className="w-3.5 h-3.5" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="pt-3 mt-2 border-t border-border">
+            <Button variant="outline" onClick={() => setImagePromo(null)} className="rounded-xl">
               بستن
             </Button>
           </DialogFooter>

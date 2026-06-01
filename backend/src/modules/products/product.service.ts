@@ -31,20 +31,22 @@ export async function createProduct(input: CreateProductInput) {
   if (input.stockQuantity !== undefined) data.stockQuantity = input.stockQuantity
   if (input.lowStockThreshold !== undefined) data.lowStockThreshold = input.lowStockThreshold
 
-  return prisma.product.create({ data, include: { category: true } })
+  return prisma.product.create({ data, include: { category: true, images: { orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }] } } })
 }
+
+const imageInclude = { images: { orderBy: [{ isPrimary: 'desc' as const }, { sortOrder: 'asc' as const }] } }
 
 export async function listAdminProducts() {
   return prisma.product.findMany({
     orderBy: { createdAt: 'desc' },
-    include: { category: true },
+    include: { category: true, ...imageInclude },
   })
 }
 
 export async function getAdminProductById(id: string) {
   const product = await prisma.product.findUnique({
     where: { id },
-    include: { category: true },
+    include: { category: true, ...imageInclude },
   })
   if (!product) throw new AppError('Product not found', 404)
   return product
@@ -86,7 +88,7 @@ export async function updateProduct(id: string, input: UpdateProductInput) {
       : { disconnect: true }
   }
 
-  return prisma.product.update({ where: { id }, data, include: { category: true } })
+  return prisma.product.update({ where: { id }, data, include: { category: true, ...imageInclude } })
 }
 
 export async function deactivateProduct(id: string) {
@@ -96,7 +98,7 @@ export async function deactivateProduct(id: string) {
   return prisma.product.update({
     where: { id },
     data: { isActive: false },
-    include: { category: true },
+    include: { category: true, ...imageInclude },
   })
 }
 
@@ -117,14 +119,14 @@ export async function listPublicProducts(query: PublicProductsQuery) {
   return prisma.product.findMany({
     where,
     orderBy: buildSortOrder(query.sort),
-    include: { category: true },
+    include: { category: true, ...imageInclude },
   })
 }
 
 export async function getPublicProductBySlug(slug: string) {
   const product = await prisma.product.findFirst({
     where: { slug, isActive: true },
-    include: { category: true },
+    include: { category: true, ...imageInclude },
   })
   if (!product) throw new AppError('Product not found', 404)
   return product

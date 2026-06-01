@@ -26,7 +26,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
       price: product.price,
       image: product.image,
       category: product.category,
-    })
+    } as unknown as import('@/types/public-product').PublicProduct)
   }
 
   return (

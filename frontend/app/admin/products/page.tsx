@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState, type FormEvent } from 'react'
-import { Edit2, Plus, Power, PowerOff } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Edit2, Image as ImageIcon, Plus, Power, PowerOff, Star, Trash2 } from 'lucide-react'
 import { AdminShell } from '@/components/admin/AdminShell'
 import { Button } from '@/components/ui/button'
 import {
@@ -17,12 +17,17 @@ import { Textarea } from '@/components/ui/textarea'
 import {
   createProduct,
   deactivateProduct,
+  deleteProductImage,
   getAdminCategories,
   getAdminProducts,
+  getProductImages,
+  setProductImagePrimary,
   updateProduct,
+  uploadProductImage,
 } from '@/lib/api'
+import { getMediaUrl } from '@/lib/media'
 import type { Category } from '@/types/category'
-import type { Product } from '@/types/product'
+import type { Product, ProductImage } from '@/types/product'
 
 // ─── Form ─────────────────────────────────────────────────────────────────────
 
@@ -80,6 +85,7 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true)
   const [pageError, setPageError] = useState('')
 
+  // Create/Edit dialog
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Product | null>(null)
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
@@ -87,6 +93,16 @@ export default function ProductsPage() {
   const [submitting, setSubmitting] = useState(false)
 
   const [actionId, setActionId] = useState<string | null>(null)
+
+  // Image management dialog
+  const [imageProduct, setImageProduct] = useState<Product | null>(null)
+  const [images, setImages] = useState<ProductImage[]>([])
+  const [imageDialogLoading, setImageDialogLoading] = useState(false)
+  const [deletingImageId, setDeletingImageId] = useState<string | null>(null)
+  const [settingPrimaryId, setSettingPrimaryId] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     Promise.all([getAdminProducts(), getAdminCategories()])
@@ -97,6 +113,8 @@ export default function ProductsPage() {
       .catch((err: Error) => setPageError(err.message))
       .finally(() => setLoading(false))
   }, [])
+
+  // ── Create / Edit dialog ───────────────────────────────────────────────────
 
   function openCreate() {
     setEditTarget(null)
@@ -117,7 +135,7 @@ export default function ProductsPage() {
       setForm(prev => ({ ...prev, [key]: e.target.value }))
   }
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const name = form.name.trim()
     const slug = form.slug.trim()
@@ -212,6 +230,69 @@ export default function ProductsPage() {
     }
   }
 
+  // ── Image management dialog ────────────────────────────────────────────────
+
+  async function openImageDialog(product: Product) {
+    setImageProduct(product)
+    setUploadError('')
+    setImageDialogLoading(true)
+    try {
+      const imgs = await getProductImages(product.id)
+      setImages(imgs)
+    } catch {
+      setImages(product.images ?? [])
+    } finally {
+      setImageDialogLoading(false)
+    }
+  }
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !imageProduct) return
+    setUploading(true)
+    setUploadError('')
+    try {
+      const img = await uploadProductImage(imageProduct.id, file, images.length === 0)
+      setImages(prev => [...prev, img])
+      // refresh product list to update primary image shown in table
+      const updated = await getAdminProducts()
+      setProducts(updated)
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'خطا در آپلود')
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  async function handleDeleteImage(imageId: string) {
+    if (!imageProduct) return
+    setDeletingImageId(imageId)
+    try {
+      await deleteProductImage(imageProduct.id, imageId)
+      setImages(prev => prev.filter(img => img.id !== imageId))
+    } catch {
+      // silently fail
+    } finally {
+      setDeletingImageId(null)
+    }
+  }
+
+  async function handleSetPrimary(imageId: string) {
+    if (!imageProduct) return
+    setSettingPrimaryId(imageId)
+    try {
+      await setProductImagePrimary(imageProduct.id, imageId)
+      setImages(prev => prev.map(img => ({ ...img, isPrimary: img.id === imageId })))
+    } catch {
+      // silently fail
+    } finally {
+      setSettingPrimaryId(null)
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+
   return (
     <AdminShell>
       {/* Page header */}
@@ -245,9 +326,10 @@ export default function ProductsPage() {
         </div>
       ) : (
         <div className="bg-card rounded-2xl border border-border overflow-x-auto">
-          <table className="w-full text-sm min-w-[640px]">
+          <table className="w-full text-sm min-w-160">
             <thead>
               <tr className="border-b border-border bg-muted/30">
+                <th className="text-right px-6 py-3.5 font-medium text-muted-foreground w-12" />
                 <th className="text-right px-6 py-3.5 font-medium text-muted-foreground">نام</th>
                 <th className="text-right px-6 py-3.5 font-medium text-muted-foreground hidden md:table-cell">
                   دسته‌بندی
@@ -257,106 +339,132 @@ export default function ProductsPage() {
                   موجودی
                 </th>
                 <th className="text-right px-6 py-3.5 font-medium text-muted-foreground">وضعیت</th>
-                <th className="px-6 py-3.5 w-24" />
+                <th className="px-6 py-3.5 w-32" />
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {products.map(product => (
-                <tr key={product.id} className="hover:bg-muted/20 transition-colors">
-                  <td className="px-6 py-4">
-                    <div>
-                      <p className="font-medium text-foreground">{product.name}</p>
-                      {product.sku && (
-                        <p className="text-xs text-muted-foreground mt-0.5">SKU: {product.sku}</p>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 hidden md:table-cell">
-                    {product.category ? (
-                      <span className="text-muted-foreground">{product.category.name}</span>
-                    ) : (
-                      <span className="text-muted-foreground/40">—</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div>
-                      <p className="font-medium text-foreground tabular-nums">
-                        {fmtPrice(product.price)}
-                      </p>
-                      {product.discountedPrice != null && (
-                        <p className="text-xs text-primary mt-0.5 tabular-nums">
-                          {fmtPrice(product.discountedPrice)} تخفیف
-                        </p>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 hidden sm:table-cell tabular-nums text-muted-foreground">
-                    {product.stockQuantity}
-                  </td>
-                  <td className="px-6 py-4">
-                    {product.isActive ? (
-                      <span className="inline-flex items-center px-2.5 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full">
-                        فعال
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2.5 py-1 bg-muted text-muted-foreground text-xs font-medium rounded-full">
-                        غیرفعال
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-1 justify-end">
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => openEdit(product)}
-                        className="text-muted-foreground hover:text-foreground rounded-lg"
-                        title="ویرایش"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </Button>
-
-                      {product.isActive ? (
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          onClick={() => handleDeactivate(product.id)}
-                          disabled={actionId === product.id}
-                          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
-                          title="غیرفعال کردن"
-                        >
-                          {actionId === product.id ? (
-                            <span className="w-3.5 h-3.5 border-2 border-current/30 border-t-current rounded-full animate-spin" />
-                          ) : (
-                            <PowerOff className="w-3.5 h-3.5" />
-                          )}
-                        </Button>
+              {products.map(product => {
+                const primaryImage = product.images?.find(img => img.isPrimary) ?? product.images?.[0]
+                return (
+                  <tr key={product.id} className="hover:bg-muted/20 transition-colors">
+                    {/* Thumbnail */}
+                    <td className="px-4 py-3">
+                      {primaryImage ? (
+                        <img
+                          src={getMediaUrl(primaryImage.imageUrl)}
+                          alt={primaryImage.altText ?? product.name}
+                          className="w-9 h-9 rounded-lg object-cover border border-border"
+                        />
                       ) : (
+                        <div className="w-9 h-9 rounded-lg bg-muted/50 border border-border flex items-center justify-center">
+                          <ImageIcon className="w-4 h-4 text-muted-foreground/40" />
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div>
+                        <p className="font-medium text-foreground">{product.name}</p>
+                        {product.sku && (
+                          <p className="text-xs text-muted-foreground mt-0.5">SKU: {product.sku}</p>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 hidden md:table-cell">
+                      {product.category ? (
+                        <span className="text-muted-foreground">{product.category.name}</span>
+                      ) : (
+                        <span className="text-muted-foreground/40">—</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div>
+                        <p className="font-medium text-foreground tabular-nums">
+                          {fmtPrice(product.price)}
+                        </p>
+                        {product.discountedPrice != null && (
+                          <p className="text-xs text-primary mt-0.5 tabular-nums">
+                            {fmtPrice(product.discountedPrice)} تخفیف
+                          </p>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 hidden sm:table-cell tabular-nums text-muted-foreground">
+                      {product.stockQuantity}
+                    </td>
+                    <td className="px-6 py-4">
+                      {product.isActive ? (
+                        <span className="inline-flex items-center px-2.5 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full">
+                          فعال
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-1 bg-muted text-muted-foreground text-xs font-medium rounded-full">
+                          غیرفعال
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-1 justify-end">
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          onClick={() => handleActivate(product.id)}
-                          disabled={actionId === product.id}
+                          onClick={() => openImageDialog(product)}
                           className="text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg"
-                          title="فعال کردن"
+                          title="مدیریت تصاویر"
                         >
-                          {actionId === product.id ? (
-                            <span className="w-3.5 h-3.5 border-2 border-current/30 border-t-current rounded-full animate-spin" />
-                          ) : (
-                            <Power className="w-3.5 h-3.5" />
-                          )}
+                          <ImageIcon className="w-3.5 h-3.5" />
                         </Button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => openEdit(product)}
+                          className="text-muted-foreground hover:text-foreground rounded-lg"
+                          title="ویرایش"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </Button>
+
+                        {product.isActive ? (
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => handleDeactivate(product.id)}
+                            disabled={actionId === product.id}
+                            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
+                            title="غیرفعال کردن"
+                          >
+                            {actionId === product.id ? (
+                              <span className="w-3.5 h-3.5 border-2 border-current/30 border-t-current rounded-full animate-spin" />
+                            ) : (
+                              <PowerOff className="w-3.5 h-3.5" />
+                            )}
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => handleActivate(product.id)}
+                            disabled={actionId === product.id}
+                            className="text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg"
+                            title="فعال کردن"
+                          >
+                            {actionId === product.id ? (
+                              <span className="w-3.5 h-3.5 border-2 border-current/30 border-t-current rounded-full animate-spin" />
+                            ) : (
+                              <Power className="w-3.5 h-3.5" />
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
       )}
 
-      {/* Create / Edit dialog */}
+      {/* ── Create / Edit dialog ──────────────────────────────────────────── */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto" dir="rtl">
           <DialogHeader>
@@ -540,6 +648,121 @@ export default function ProductsPage() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Image management dialog ───────────────────────────────────────── */}
+      <Dialog open={!!imageProduct} onOpenChange={open => !open && setImageProduct(null)}>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="text-right">
+              تصاویر محصول: {imageProduct?.name}
+            </DialogTitle>
+          </DialogHeader>
+
+          {imageDialogLoading ? (
+            <div className="flex items-center justify-center py-10 text-muted-foreground gap-3">
+              <span className="w-5 h-5 border-2 border-muted border-t-primary rounded-full animate-spin" />
+              <span className="text-sm">در حال بارگذاری...</span>
+            </div>
+          ) : (
+            <div className="flex-1 overflow-y-auto space-y-4 min-h-0">
+              {/* Upload button */}
+              <div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  className="hidden"
+                  onChange={handleUpload}
+                  disabled={uploading}
+                />
+                <Button
+                  variant="outline"
+                  className="w-full rounded-xl gap-2 border-dashed"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                >
+                  {uploading ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin" />
+                      در حال آپلود...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4" />
+                      افزودن تصویر
+                    </>
+                  )}
+                </Button>
+                {uploadError && (
+                  <p className="text-destructive text-xs mt-1.5">{uploadError}</p>
+                )}
+              </div>
+
+              {/* Image grid */}
+              {images.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  هیچ تصویری آپلود نشده است.
+                </p>
+              ) : (
+                <div className="grid grid-cols-3 gap-3">
+                  {images.map(img => (
+                    <div key={img.id} className="relative group rounded-xl overflow-hidden border border-border aspect-square">
+                      <img
+                        src={getMediaUrl(img.imageUrl)}
+                        alt={img.altText ?? ''}
+                        className="w-full h-full object-cover"
+                      />
+                      {img.isPrimary && (
+                        <span className="absolute top-1.5 right-1.5 bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 rounded-full font-medium">
+                          اصلی
+                        </span>
+                      )}
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
+                        {!img.isPrimary && (
+                          <Button
+                            size="icon-sm"
+                            variant="secondary"
+                            onClick={() => handleSetPrimary(img.id)}
+                            disabled={settingPrimaryId === img.id}
+                            className="h-7 w-7 rounded-lg"
+                            title="تصویر اصلی"
+                          >
+                            {settingPrimaryId === img.id ? (
+                              <span className="w-3 h-3 border-2 border-current/30 border-t-current rounded-full animate-spin" />
+                            ) : (
+                              <Star className="w-3.5 h-3.5" />
+                            )}
+                          </Button>
+                        )}
+                        <Button
+                          size="icon-sm"
+                          variant="destructive"
+                          onClick={() => handleDeleteImage(img.id)}
+                          disabled={deletingImageId === img.id}
+                          className="h-7 w-7 rounded-lg"
+                          title="حذف"
+                        >
+                          {deletingImageId === img.id ? (
+                            <span className="w-3 h-3 border-2 border-current/30 border-t-current rounded-full animate-spin" />
+                          ) : (
+                            <Trash2 className="w-3.5 h-3.5" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="pt-3 mt-2 border-t border-border">
+            <Button variant="outline" onClick={() => setImageProduct(null)} className="rounded-xl">
+              بستن
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </AdminShell>

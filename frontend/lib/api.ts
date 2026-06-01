@@ -1,4 +1,6 @@
 import type { Admin, LoginResponse } from '@/types/admin'
+import type { ProductImage } from '@/types/product'
+import type { PromotionImage } from '@/types/promotion'
 import type { Category, CreateCategoryInput, UpdateCategoryInput } from '@/types/category'
 import type { Product, CreateProductInput, UpdateProductInput } from '@/types/product'
 import type { InventoryItem, InventoryAdjustment, AdjustStockInput, AdjustStockResult } from '@/types/inventory'
@@ -382,6 +384,94 @@ export async function getOrderStatusReport(): Promise<OrderStatusBreakdown> {
 
 export async function getRecentOrdersReport(): Promise<RecentOrder[]> {
   return apiFetch<RecentOrder[]>('/api/admin/reports/recent-orders', {
+    headers: authHeaders(),
+  })
+}
+
+// ─── Media — Product images ────────────────────────────────────────────────────
+
+async function apiUpload<T>(path: string, formData: FormData): Promise<T> {
+  const token = getToken()
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  })
+  const json = await res.json()
+  if (!res.ok) throw new Error(json.message ?? 'خطایی رخ داد')
+  return json.data as T
+}
+
+export async function getProductImages(productId: string): Promise<ProductImage[]> {
+  const data = await apiFetch<{ images: ProductImage[] }>(
+    `/api/admin/media/products/${productId}`,
+    { headers: authHeaders() },
+  )
+  return data.images
+}
+
+export async function uploadProductImage(
+  productId: string,
+  file: File,
+  isPrimary = false,
+): Promise<ProductImage> {
+  const fd = new FormData()
+  fd.append('image', file)
+  if (isPrimary) fd.append('isPrimary', 'true')
+  const data = await apiUpload<{ image: ProductImage }>(
+    `/api/admin/media/products/${productId}`,
+    fd,
+  )
+  return data.image
+}
+
+export async function deleteProductImage(productId: string, imageId: string): Promise<void> {
+  await apiFetch(`/api/admin/media/products/${productId}/images/${imageId}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  })
+}
+
+export async function setProductImagePrimary(
+  productId: string,
+  imageId: string,
+): Promise<ProductImage> {
+  const data = await apiFetch<{ image: ProductImage }>(
+    `/api/admin/media/products/${productId}/images/${imageId}/primary`,
+    { method: 'PATCH', headers: authHeaders() },
+  )
+  return data.image
+}
+
+// ─── Media — Promotion images ──────────────────────────────────────────────────
+
+export async function getPromotionImages(promotionId: string): Promise<PromotionImage[]> {
+  const data = await apiFetch<{ images: PromotionImage[] }>(
+    `/api/admin/media/promotions/${promotionId}`,
+    { headers: authHeaders() },
+  )
+  return data.images
+}
+
+export async function uploadPromotionImage(
+  promotionId: string,
+  file: File,
+): Promise<PromotionImage> {
+  const fd = new FormData()
+  fd.append('image', file)
+  const data = await apiUpload<{ image: PromotionImage }>(
+    `/api/admin/media/promotions/${promotionId}`,
+    fd,
+  )
+  return data.image
+}
+
+export async function deletePromotionImage(
+  promotionId: string,
+  imageId: string,
+): Promise<void> {
+  await apiFetch(`/api/admin/media/promotions/${promotionId}/images/${imageId}`, {
+    method: 'DELETE',
     headers: authHeaders(),
   })
 }

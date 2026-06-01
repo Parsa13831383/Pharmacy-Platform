@@ -1,3 +1,10 @@
+export interface PromotionImage {
+  id: string
+  promotionId: string
+  imageUrl: string
+  createdAt: string
+}
+
 /** Product shape nested inside PromotionProduct relations */
 export interface PromotionProductDetail {
   id: string
@@ -32,6 +39,7 @@ export interface Promotion {
   createdAt: string
   updatedAt: string
   products?: PromotionProductItem[]
+  images?: PromotionImage[]
   _count?: { products: number }
 }
 

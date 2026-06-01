@@ -40,7 +40,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
         price: product.price,
         image: product.image,
         category: product.category,
-      })
+      } as unknown as import('@/types/public-product').PublicProduct)
     }
   }
 
