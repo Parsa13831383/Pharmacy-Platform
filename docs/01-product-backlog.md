@@ -158,7 +158,7 @@ Uses:
 
 ---
 
-## EPIC 9 — Reporting & Insights
+## EPIC 9 — Reporting & Insights ✅
 
 ### Features
 

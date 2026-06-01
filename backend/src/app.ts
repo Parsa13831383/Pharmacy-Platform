@@ -9,6 +9,7 @@ import inventoryRoutes from './modules/inventory/inventory.routes'
 import checkoutRoutes from './modules/checkout/checkout.routes'
 import { adminOrderRouter, publicOrderRouter } from './modules/orders/orders.routes'
 import { adminPromotionRouter, publicPromotionRouter } from './modules/promotions/promotion.routes'
+import reportsRouter from './modules/reports/reports.routes'
 
 const app = express()
 
@@ -28,6 +29,7 @@ app.use('/api/admin/inventory', inventoryRoutes)
 app.use('/api/admin/orders', adminOrderRouter)
 app.use('/api/checkout', checkoutRoutes)
 app.use('/api/admin/promotions', adminPromotionRouter)
+app.use('/api/admin/reports', reportsRouter)
 app.use('/api/products', publicProductRouter)
 app.use('/api/orders', publicOrderRouter)
 app.use('/api/promotions', publicPromotionRouter)

@@ -12,6 +12,14 @@ import type {
   UpdatePromotionInput,
 } from '@/types/promotion'
 import type {
+  ReportsSummary,
+  SalesDataPoint,
+  TopProduct,
+  LowStockItem,
+  OrderStatusBreakdown,
+  RecentOrder,
+} from '@/types/reports'
+import type {
   SendOtpResponse,
   VerifyOtpResponse,
   CreateOrderPayload,
@@ -338,4 +346,42 @@ export async function getPublicPromotionBySlug(slug: string): Promise<PublicProm
 export async function getFeaturedPromotionProducts(): Promise<FeaturedProduct[]> {
   const data = await apiFetch<{ products: FeaturedProduct[] }>('/api/promotions/featured/products')
   return data.products
+}
+
+// ─── Reports ──────────────────────────────────────────────────────────────────
+
+export async function getReportsSummary(): Promise<ReportsSummary> {
+  return apiFetch<ReportsSummary>('/api/admin/reports/summary', {
+    headers: authHeaders(),
+  })
+}
+
+export async function getSalesOverview(days: number): Promise<SalesDataPoint[]> {
+  return apiFetch<SalesDataPoint[]>(`/api/admin/reports/sales-overview?days=${days}`, {
+    headers: authHeaders(),
+  })
+}
+
+export async function getTopProducts(): Promise<TopProduct[]> {
+  return apiFetch<TopProduct[]>('/api/admin/reports/top-products', {
+    headers: authHeaders(),
+  })
+}
+
+export async function getLowStockReport(): Promise<LowStockItem[]> {
+  return apiFetch<LowStockItem[]>('/api/admin/reports/low-stock', {
+    headers: authHeaders(),
+  })
+}
+
+export async function getOrderStatusReport(): Promise<OrderStatusBreakdown> {
+  return apiFetch<OrderStatusBreakdown>('/api/admin/reports/order-status', {
+    headers: authHeaders(),
+  })
+}
+
+export async function getRecentOrdersReport(): Promise<RecentOrder[]> {
+  return apiFetch<RecentOrder[]>('/api/admin/reports/recent-orders', {
+    headers: authHeaders(),
+  })
 }
