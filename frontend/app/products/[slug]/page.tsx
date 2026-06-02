@@ -17,9 +17,9 @@ import type { PublicProduct, PublicProductImage } from '@/types/public-product'
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function stockBadge(qty: number, threshold: number) {
-  if (qty === 0) return { text: 'ناموجود', cls: 'bg-destructive/10 text-destructive' }
+  if (qty === 0) return { text: 'ناموجود', cls: 'bg-red-50 text-red-600 border border-red-200' }
   if (qty <= threshold) return { text: 'تعداد محدود', cls: 'bg-amber-50 text-amber-700 border border-amber-200' }
-  return { text: 'موجود', cls: 'bg-primary/10 text-primary' }
+  return { text: 'موجود', cls: 'bg-emerald-50 text-emerald-700 border border-emerald-200' }
 }
 
 const GRADIENT_BY_SLUG: Record<string, string> = {
@@ -195,7 +195,7 @@ export default function ProductDetailPage() {
                     {product.category && (
                       <Link
                         href={`/products?category=${product.category.slug}`}
-                        className="text-xs bg-primary/10 text-primary px-3 py-1 rounded-full hover:bg-primary/20 transition-colors"
+                        className="text-xs bg-cyan-100 text-cyan-700 px-3 py-1 rounded-full hover:bg-cyan-200 transition-colors"
                       >
                         {product.category.name}
                       </Link>
@@ -278,7 +278,7 @@ export default function ProductDetailPage() {
                       <Button
                         onClick={handleAdd}
                         disabled={added}
-                        className="flex-1 max-w-xs rounded-xl h-11 gap-2"
+                        className="flex-1 max-w-xs rounded-xl h-11 gap-2 bg-cyan-600 hover:bg-cyan-700 text-white"
                       >
                         {added ? (
                           <>

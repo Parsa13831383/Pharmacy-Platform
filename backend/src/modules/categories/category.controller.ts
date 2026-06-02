@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express'
 import { createCategorySchema, updateCategorySchema } from './category.validation'
-import { createCategory, listCategories, getCategoryById, updateCategory, deactivateCategory } from './category.service'
+import { createCategory, listCategories, getCategoryById, updateCategory, deactivateCategory, toggleCategoryFeatured, listFeaturedCategories } from './category.service'
 import { AppError } from '../../lib/errors'
 
 export async function createCategoryController(req: Request, res: Response) {
@@ -71,5 +71,27 @@ export async function deactivateCategoryController(req: Request, res: Response) 
     } else {
       res.status(500).json({ success: false, message: 'Internal server error' })
     }
+  }
+}
+
+export async function toggleCategoryFeaturedController(req: Request, res: Response) {
+  try {
+    const category = await toggleCategoryFeatured(req.params['id'] as string)
+    res.json({ success: true, data: { category } })
+  } catch (err) {
+    if (err instanceof AppError) {
+      res.status(err.statusCode).json({ success: false, message: err.message })
+    } else {
+      res.status(500).json({ success: false, message: 'Internal server error' })
+    }
+  }
+}
+
+export async function listFeaturedCategoriesController(_req: Request, res: Response) {
+  try {
+    const categories = await listFeaturedCategories()
+    res.json({ success: true, data: { categories } })
+  } catch {
+    res.status(500).json({ success: false, message: 'Internal server error' })
   }
 }

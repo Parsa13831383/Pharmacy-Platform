@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Edit2, Image as ImageIcon, Plus, Power, PowerOff, Star, Trash2 } from 'lucide-react'
+import { Edit2, Image as ImageIcon, Plus, Power, PowerOff, Star, Trash2, Bookmark, BookmarkCheck } from 'lucide-react'
 import { AdminShell } from '@/components/admin/AdminShell'
 import { Button } from '@/components/ui/button'
 import {
@@ -22,6 +22,7 @@ import {
   getAdminProducts,
   getProductImages,
   setProductImagePrimary,
+  toggleAdminProductFeatured,
   updateProduct,
   uploadProductImage,
 } from '@/lib/api'
@@ -93,6 +94,7 @@ export default function ProductsPage() {
   const [submitting, setSubmitting] = useState(false)
 
   const [actionId, setActionId] = useState<string | null>(null)
+  const [featuredId, setFeaturedId] = useState<string | null>(null)
 
   // Image management dialog
   const [imageProduct, setImageProduct] = useState<Product | null>(null)
@@ -227,6 +229,18 @@ export default function ProductsPage() {
       // silently fail
     } finally {
       setActionId(null)
+    }
+  }
+
+  async function handleToggleFeatured(id: string) {
+    setFeaturedId(id)
+    try {
+      const updated = await toggleAdminProductFeatured(id)
+      setProducts(prev => prev.map(p => (p.id === updated.id ? updated : p)))
+    } catch {
+      // silently fail
+    } finally {
+      setFeaturedId(null)
     }
   }
 
@@ -392,18 +406,42 @@ export default function ProductsPage() {
                       {product.stockQuantity}
                     </td>
                     <td className="px-6 py-4">
-                      {product.isActive ? (
-                        <span className="inline-flex items-center px-2.5 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full">
-                          فعال
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2.5 py-1 bg-muted text-muted-foreground text-xs font-medium rounded-full">
-                          غیرفعال
-                        </span>
-                      )}
+                      <div className="flex flex-col gap-1">
+                        {product.isActive ? (
+                          <span className="inline-flex items-center px-2.5 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full w-fit">
+                            فعال
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-1 bg-muted text-muted-foreground text-xs font-medium rounded-full w-fit">
+                            غیرفعال
+                          </span>
+                        )}
+                        {product.featuredOnHomepage && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded-full w-fit">
+                            <BookmarkCheck className="w-3 h-3" />
+                            ویژه
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1 justify-end">
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => handleToggleFeatured(product.id)}
+                          disabled={featuredId === product.id}
+                          className={`rounded-lg ${product.featuredOnHomepage ? 'text-amber-600 hover:text-amber-700 hover:bg-amber-50' : 'text-muted-foreground hover:text-amber-600 hover:bg-amber-50'}`}
+                          title={product.featuredOnHomepage ? 'حذف از ویژه' : 'افزودن به ویژه'}
+                        >
+                          {featuredId === product.id ? (
+                            <span className="w-3.5 h-3.5 border-2 border-current/30 border-t-current rounded-full animate-spin" />
+                          ) : product.featuredOnHomepage ? (
+                            <BookmarkCheck className="w-3.5 h-3.5" />
+                          ) : (
+                            <Bookmark className="w-3.5 h-3.5" />
+                          )}
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon-sm"

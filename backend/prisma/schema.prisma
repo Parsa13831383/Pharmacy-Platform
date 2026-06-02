@@ -69,13 +69,14 @@ model Order {
 }
 
 model Category {
-  id          String   @id @default(uuid())
-  name        String
-  slug        String   @unique
-  description String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                String   @id @default(uuid())
+  name              String
+  slug              String   @unique
+  description       String?
+  isActive          Boolean  @default(true)
+  featuredOnHomepage Boolean @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   products Product[]
 }
@@ -92,9 +93,10 @@ model Product {
   discountedPrice   Decimal? @db.Decimal(12, 2)
   stockQuantity     Int      @default(0)
   lowStockThreshold Int      @default(5)
-  isActive          Boolean  @default(true)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  isActive           Boolean  @default(true)
+  featuredOnHomepage Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   category              Category?              @relation(fields: [categoryId], references: [id])
   orderItems            OrderItem[]
@@ -200,4 +202,31 @@ model Admin {
 enum AdminRole {
   OWNER
   STAFF
+}
+
+model HomepageSettings {
+  id          String  @id @default(uuid())
+
+  heroTitle    String  @default("خرید آسان محصولات داروخانه‌ای")
+  heroSubtitle String  @default("محصولات آرایشی، بهداشتی و مکمل‌ها را ساده، سریع و مطمئن سفارش دهید.")
+  heroButtonText String @default("مشاهده محصولات")
+  heroButtonLink String @default("/products")
+
+  promoBannerTitle    String @default("جشنواره فروش ویژه")
+  promoBannerSubtitle String @default("تخفیف‌های استثنایی روی محصولات منتخب")
+
+  aboutTitle       String @default("درباره داروخانه سبز")
+  aboutDescription String @default("داروخانه سبز با هدف ارائه محصولات با کیفیت آرایشی، بهداشتی و دارویی، خدمات خود را به صورت آنلاین ارائه می‌دهد.")
+
+  contactPhone    String @default("")
+  contactWhatsapp String @default("")
+
+  isHeroEnabled              Boolean @default(true)
+  isPromoEnabled             Boolean @default(true)
+  isFeaturedProductsEnabled  Boolean @default(true)
+  isFeaturedCategoriesEnabled Boolean @default(true)
+  isAboutEnabled             Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

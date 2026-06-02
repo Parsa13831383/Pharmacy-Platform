@@ -1,4 +1,5 @@
 import type { Admin, LoginResponse } from '@/types/admin'
+import type { HomepageSettings, UpdateHomepageSettingsInput } from '@/types/cms'
 import type { ProductImage } from '@/types/product'
 import type { PromotionImage } from '@/types/promotion'
 import type { Category, CreateCategoryInput, UpdateCategoryInput } from '@/types/category'
@@ -386,6 +387,59 @@ export async function getRecentOrdersReport(): Promise<RecentOrder[]> {
   return apiFetch<RecentOrder[]>('/api/admin/reports/recent-orders', {
     headers: authHeaders(),
   })
+}
+
+// ─── CMS ──────────────────────────────────────────────────────────────────────
+
+export async function getHomepageSettings(): Promise<HomepageSettings> {
+  const data = await apiFetch<{ settings: HomepageSettings }>('/api/cms/homepage')
+  return data.settings
+}
+
+export async function updateHomepageSettings(input: UpdateHomepageSettingsInput): Promise<HomepageSettings> {
+  const data = await apiFetch<{ settings: HomepageSettings }>('/api/admin/cms/homepage', {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify(input),
+  })
+  return data.settings
+}
+
+// ─── Featured Products ─────────────────────────────────────────────────────────
+
+export async function getFeaturedProducts(): Promise<PublicProduct[]> {
+  const data = await apiFetch<{ products: PublicProduct[] }>('/api/products/featured')
+  return data.products
+}
+
+export async function toggleAdminProductFeatured(id: string): Promise<Product> {
+  const data = await apiFetch<{ product: Product }>(`/api/admin/products/${id}/featured`, {
+    method: 'PATCH',
+    headers: authHeaders(),
+  })
+  return data.product
+}
+
+// ─── Featured Categories ───────────────────────────────────────────────────────
+
+export async function getFeaturedCategories(): Promise<Category[]> {
+  const data = await apiFetch<{ categories: Category[] }>('/api/categories/featured')
+  return data.categories
+}
+
+export async function toggleAdminCategoryFeatured(id: string): Promise<Category> {
+  const data = await apiFetch<{ category: Category }>(`/api/admin/categories/${id}/featured`, {
+    method: 'PATCH',
+    headers: authHeaders(),
+  })
+  return data.category
+}
+
+// ─── Public Categories ─────────────────────────────────────────────────────────
+
+export async function getPublicCategories(): Promise<Category[]> {
+  const data = await apiFetch<{ categories: Category[] }>('/api/categories')
+  return data.categories
 }
 
 // ─── Media — Product images ────────────────────────────────────────────────────

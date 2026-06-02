@@ -102,6 +102,24 @@ export async function deactivateProduct(id: string) {
   })
 }
 
+export async function toggleProductFeatured(id: string) {
+  const product = await prisma.product.findUnique({ where: { id } })
+  if (!product) throw new AppError('Product not found', 404)
+  return prisma.product.update({
+    where: { id },
+    data: { featuredOnHomepage: !product.featuredOnHomepage },
+    include: { category: true, ...imageInclude },
+  })
+}
+
+export async function listFeaturedProducts() {
+  return prisma.product.findMany({
+    where: { isActive: true, featuredOnHomepage: true },
+    orderBy: { updatedAt: 'desc' },
+    include: { category: true, ...imageInclude },
+  })
+}
+
 export async function listPublicProducts(query: PublicProductsQuery) {
   const where: Prisma.ProductWhereInput = { isActive: true }
 

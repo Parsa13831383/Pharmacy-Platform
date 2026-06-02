@@ -3,7 +3,7 @@
 import { useEffect, type ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Archive, BarChart2, LayoutDashboard, Leaf, LogOut, Package, ShoppingBag, Sparkles, Tag } from 'lucide-react'
+import { Archive, BarChart2, Globe, LayoutDashboard, Leaf, LogOut, Package, ShoppingBag, Sparkles, Tag } from 'lucide-react'
 import { useAdminAuth } from '@/context/AdminAuthContext'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -22,6 +22,7 @@ const NAV_ITEMS = [
   { href: '/admin/orders', label: 'سفارش‌ها', icon: ShoppingBag, exact: false },
   { href: '/admin/promotions', label: 'جشنواره‌ها', icon: Sparkles, exact: false },
   { href: '/admin/reports', label: 'گزارش‌ها', icon: BarChart2, exact: false },
+  { href: '/admin/cms', label: 'صفحه اصلی', icon: Globe, exact: false },
 ]
 
 export function AdminShell({ children }: { children: ReactNode }) {

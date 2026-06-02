@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useEffect, useRef, useState, type FormEvent } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { CheckCircle, Clock, Package, Search, XCircle } from 'lucide-react'
@@ -220,7 +220,7 @@ function TrackOrderContent() {
     }
   }
 
-  function handleSubmit(e: FormEvent) {
+  function handleSubmit(e: { preventDefault(): void }) {
     e.preventDefault()
     fetchOrder(input)
   }

@@ -29,6 +29,7 @@ export interface PublicProduct {
   sku: string | null
   description: string | null
   isActive: boolean
+  featuredOnHomepage: boolean
   categoryId: string | null
   category: PublicProductCategory | null
   images: PublicProductImage[]

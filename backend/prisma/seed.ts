@@ -20,6 +20,12 @@ async function main() {
     },
   })
 
+  const existingSettings = await prisma.homepageSettings.findFirst()
+  if (!existingSettings) {
+    await prisma.homepageSettings.create({ data: {} })
+    console.log('Seed complete: default HomepageSettings created')
+  }
+
   console.log('Seed complete: owner@pharmacy.local ready')
 }
 

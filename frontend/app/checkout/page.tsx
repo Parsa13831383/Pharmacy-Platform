@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowRight, CheckCircle, Leaf, Lock, Phone, ShoppingBag } from 'lucide-react'
@@ -112,7 +112,7 @@ export default function CheckoutPage() {
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
-  async function handleSendOtp(e: FormEvent) {
+  async function handleSendOtp(e: { preventDefault(): void }) {
     e.preventDefault()
     setPhoneError('')
     if (!isValidIranPhone(phone)) {
@@ -133,7 +133,7 @@ export default function CheckoutPage() {
     }
   }
 
-  async function handleVerifyOtp(e: FormEvent) {
+  async function handleVerifyOtp(e: { preventDefault(): void }) {
     e.preventDefault()
     if (otpCode.length !== 6) {
       setOtpError('کد تأیید باید ۶ رقم باشد')
@@ -188,9 +188,9 @@ export default function CheckoutPage() {
     <div className="min-h-screen flex flex-col" dir="rtl">
       <Header />
 
-      <main className="flex-1 bg-background">
+      <main className="flex-1 bg-slate-50">
         {/* Breadcrumb */}
-        <div className="border-b border-border bg-card">
+        <div className="border-b border-slate-100 bg-white">
           <div className="container mx-auto px-4 py-3">
             <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Link href="/" className="hover:text-foreground transition-colors">خانه</Link>

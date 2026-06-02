@@ -199,7 +199,7 @@ Uses:
 ---
 # EPIC 10.5 — Product Media & Visual Polish ✅
 
-# EPIC 10.6 — CMS / Homepage Management
+# EPIC 10.6 — CMS / Homepage Management ⏳
 
 # EPIC 10.7 — SMS Provider Integration
 

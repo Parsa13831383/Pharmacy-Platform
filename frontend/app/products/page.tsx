@@ -136,16 +136,16 @@ function ProductsContent() {
 
       <main className="flex-1">
         {/* Page header */}
-        <section className="bg-secondary/30 py-10 md:py-14">
+        <section className="bg-linear-to-br from-slate-50 via-cyan-50 to-blue-50 py-10 md:py-14 border-b border-slate-100">
           <div className="container mx-auto px-4">
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">محصولات</h1>
-              <p className="text-muted-foreground">
-                محصولات مورد نیاز خود را جستجو و انتخاب کنید.
+              <h1 className="text-3xl md:text-4xl font-bold text-slate-800 mb-2">محصولات</h1>
+              <p className="text-slate-500">
+                محصول مورد نیاز خود را جستجو و انتخاب کنید.
               </p>
             </motion.div>
           </div>

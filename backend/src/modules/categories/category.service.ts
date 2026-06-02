@@ -47,3 +47,16 @@ export async function deactivateCategory(id: string) {
 
   return prisma.category.update({ where: { id }, data: { isActive: false } })
 }
+
+export async function toggleCategoryFeatured(id: string) {
+  const category = await prisma.category.findUnique({ where: { id } })
+  if (!category) throw new AppError('Category not found', 404)
+  return prisma.category.update({ where: { id }, data: { featuredOnHomepage: !category.featuredOnHomepage } })
+}
+
+export async function listFeaturedCategories() {
+  return prisma.category.findMany({
+    where: { isActive: true, featuredOnHomepage: true },
+    orderBy: { updatedAt: 'desc' },
+  })
+}

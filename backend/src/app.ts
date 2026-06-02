@@ -5,8 +5,9 @@ import morgan from 'morgan'
 import path from 'path'
 import { env } from './config/env'
 import authRoutes from './modules/auth/auth.routes'
-import categoryRoutes from './modules/categories/category.routes'
+import { adminCategoryRouter, publicCategoryRouter } from './modules/categories/category.routes'
 import { adminProductRouter, publicProductRouter } from './modules/products/product.routes'
+import { adminCmsRouter, publicCmsRouter } from './modules/cms/cms.routes'
 import inventoryRoutes from './modules/inventory/inventory.routes'
 import checkoutRoutes from './modules/checkout/checkout.routes'
 import { adminOrderRouter, publicOrderRouter } from './modules/orders/orders.routes'
@@ -94,7 +95,10 @@ app.get('/health', (_req, res) => {
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 app.use('/api/admin/auth', authRoutes)
-app.use('/api/admin/categories', categoryRoutes)
+app.use('/api/admin/categories', adminCategoryRouter)
+app.use('/api/categories', publicCategoryRouter)
+app.use('/api/admin/cms', adminCmsRouter)
+app.use('/api/cms', publicCmsRouter)
 app.use('/api/admin/products', adminProductRouter)
 app.use('/api/admin/inventory', inventoryRoutes)
 app.use('/api/admin/orders', adminOrderRouter)

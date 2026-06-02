@@ -22,6 +22,7 @@ export interface Product {
   sku: string | null
   description: string | null
   isActive: boolean
+  featuredOnHomepage: boolean
   categoryId: string | null
   category: Category | null
   images: ProductImage[]

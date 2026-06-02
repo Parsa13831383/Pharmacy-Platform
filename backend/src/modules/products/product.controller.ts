@@ -6,6 +6,8 @@ import {
   getAdminProductById,
   updateProduct,
   deactivateProduct,
+  toggleProductFeatured,
+  listFeaturedProducts,
   listPublicProducts,
   getPublicProductBySlug,
 } from './product.service'
@@ -79,6 +81,28 @@ export async function deactivateProductController(req: Request, res: Response) {
     } else {
       res.status(500).json({ success: false, message: 'Internal server error' })
     }
+  }
+}
+
+export async function toggleProductFeaturedController(req: Request, res: Response) {
+  try {
+    const product = await toggleProductFeatured(req.params['id'] as string)
+    res.json({ success: true, data: { product } })
+  } catch (err) {
+    if (err instanceof AppError) {
+      res.status(err.statusCode).json({ success: false, message: err.message })
+    } else {
+      res.status(500).json({ success: false, message: 'Internal server error' })
+    }
+  }
+}
+
+export async function listFeaturedProductsController(_req: Request, res: Response) {
+  try {
+    const products = await listFeaturedProducts()
+    res.json({ success: true, data: { products } })
+  } catch {
+    res.status(500).json({ success: false, message: 'Internal server error' })
   }
 }
 

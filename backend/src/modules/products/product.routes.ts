@@ -6,6 +6,8 @@ import {
   getAdminProductController,
   updateProductController,
   deactivateProductController,
+  toggleProductFeaturedController,
+  listFeaturedProductsController,
   listPublicProductsController,
   getPublicProductController,
 } from './product.controller'
@@ -18,8 +20,10 @@ adminProductRouter.get('/', listAdminProductsController)
 adminProductRouter.get('/:id', getAdminProductController)
 adminProductRouter.patch('/:id', updateProductController)
 adminProductRouter.patch('/:id/deactivate', deactivateProductController)
+adminProductRouter.patch('/:id/featured', toggleProductFeaturedController)
 
 export const publicProductRouter = Router()
 
+publicProductRouter.get('/featured', listFeaturedProductsController)
 publicProductRouter.get('/', listPublicProductsController)
 publicProductRouter.get('/:slug', getPublicProductController)

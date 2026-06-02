@@ -4,6 +4,7 @@ export interface Category {
   slug: string
   description: string | null
   isActive: boolean
+  featuredOnHomepage: boolean
   createdAt: string
   updatedAt: string
 }

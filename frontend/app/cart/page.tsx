@@ -31,7 +31,7 @@ export default function CartPage() {
 
       <main className="flex-1">
         {/* Page header */}
-        <section className="bg-secondary/30 py-8 md:py-12">
+        <section className="bg-linear-to-br from-slate-50 via-cyan-50 to-blue-50 py-8 md:py-12 border-b border-slate-100">
           <div className="container mx-auto px-4">
             <nav className="flex items-center gap-1.5 text-xs text-muted-foreground mb-4">
               <Link href="/" className="hover:text-foreground transition-colors">
@@ -206,7 +206,7 @@ export default function CartPage() {
 
                     <Link href="/checkout" className="block">
                       <Button
-                        className="w-full rounded-xl h-11 gap-2"
+                        className="w-full rounded-xl h-11 gap-2 bg-cyan-600 hover:bg-cyan-700 text-white"
                         size="lg"
                       >
                         ادامه ثبت سفارش
