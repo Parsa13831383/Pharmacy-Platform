@@ -2,7 +2,6 @@
 
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import Link from 'next/link'
 import { CheckCircle, Clock, Package, Search, XCircle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Header } from '@/components/layout/header'
@@ -64,7 +63,7 @@ function fmtDateTime(dateStr: string) {
 function ProgressTimeline({ status }: { status: OrderStatus }) {
   if (status === 'CANCELLED') {
     return (
-      <div className="flex items-center gap-3 bg-destructive/8 rounded-2xl p-4">
+      <div className="flex items-center gap-3 bg-destructive/8 rounded p-4">
         <XCircle className="w-8 h-8 text-destructive shrink-0" />
         <div>
           <p className="font-semibold text-destructive">سفارش لغو شده</p>
@@ -141,7 +140,7 @@ function OrderCard({ order }: { order: PublicOrder }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-      className="bg-card rounded-2xl border border-border overflow-hidden"
+      className="bg-card rounded border border-border overflow-hidden"
     >
       {/* Header row */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/20">
@@ -251,7 +250,7 @@ function TrackOrderContent() {
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.45, delay: 0.08 }}
-              className="bg-card rounded-2xl border border-border p-6"
+              className="bg-card rounded border border-border p-6"
             >
               <form onSubmit={handleSubmit} className="flex gap-3">
                 <Input
@@ -291,7 +290,7 @@ function TrackOrderContent() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className={`rounded-2xl border px-5 py-4 text-sm ${
+                  className={`rounded border px-5 py-4 text-sm ${
                     errorType === 'notFound'
                       ? 'bg-muted border-border text-muted-foreground'
                       : 'bg-destructive/10 border-destructive/20 text-destructive'

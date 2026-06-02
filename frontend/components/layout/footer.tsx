@@ -1,103 +1,116 @@
 import Link from 'next/link'
-import { Phone, Mail, MapPin, Instagram } from 'lucide-react'
+import { Mail, MapPin, Phone } from 'lucide-react'
 
 export function Footer() {
   return (
-    <footer className="bg-secondary/50 border-t border-border mt-auto">
-      <div className="container mx-auto px-4 py-12 md:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+    <footer style={{ backgroundColor: '#EFE7DA', borderTop: '1px solid #E5DED1' }}>
+      <div className="max-w-7xl mx-auto px-6 md:px-10 py-16 md:py-20">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-16">
+
           {/* Brand */}
-          <div className="space-y-4">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">س</span>
-              </div>
-              <span className="font-bold text-xl text-foreground">داروخانه سبز</span>
+          <div className="space-y-4 lg:col-span-1">
+            <Link href="/" className="inline-block">
+              <span className="font-bold text-lg" style={{ color: '#232323', letterSpacing: '-0.02em' }}>
+                داروخانه سبز
+              </span>
             </Link>
-            <p className="text-muted-foreground text-sm leading-relaxed">
-              داروخانه آنلاین با بهترین محصولات مراقبت از پوست، آرایشی، بهداشتی و مکمل‌های غذایی با کیفیت برتر و قیمت مناسب.
+            <p className="text-sm leading-relaxed" style={{ color: '#6F6A61', maxWidth: '22ch' }}>
+              محصولات مراقبتی، آرایشی و بهداشتی با تضمین اصالت و ارسال سریع.
             </p>
+            <div className="flex items-center gap-3 pt-2">
+              <a
+                href="#"
+                className="w-8 h-8 flex items-center justify-center rounded-full border transition-colors text-xs font-bold"
+                style={{ borderColor: '#E5DED1', color: '#6F6A61' }}
+                aria-label="اینستاگرام"
+              >
+                IG
+              </a>
+            </div>
           </div>
 
           {/* Quick Links */}
           <div className="space-y-4">
-            <h4 className="font-bold text-foreground">دسترسی سریع</h4>
-            <nav className="flex flex-col gap-2">
-              <Link href="/products" className="text-muted-foreground hover:text-primary transition-colors text-sm">
-                همه محصولات
-              </Link>
-              <Link href="/products?category=skincare" className="text-muted-foreground hover:text-primary transition-colors text-sm">
-                مراقبت از پوست
-              </Link>
-              <Link href="/products?category=cosmetics" className="text-muted-foreground hover:text-primary transition-colors text-sm">
-                محصولات آرایشی
-              </Link>
-              <Link href="/products?category=supplements" className="text-muted-foreground hover:text-primary transition-colors text-sm">
-                مکمل‌های غذایی
-              </Link>
+            <h4 className="text-xs tracking-editorial font-medium" style={{ color: '#232323' }}>
+              محصولات
+            </h4>
+            <nav className="flex flex-col gap-2.5">
+              {[
+                { href: '/products', label: 'همه محصولات' },
+                { href: '/products?category=skincare', label: 'مراقبت پوست' },
+                { href: '/products?category=cosmetics', label: 'آرایشی' },
+                { href: '/products?category=supplements', label: 'مکمل‌ها' },
+                { href: '/products?category=hygiene', label: 'بهداشت شخصی' },
+              ].map(link => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="text-sm transition-colors"
+                  style={{ color: '#6F6A61' }}
+                >
+                  {link.label}
+                </Link>
+              ))}
             </nav>
           </div>
 
           {/* Customer Service */}
           <div className="space-y-4">
-            <h4 className="font-bold text-foreground">خدمات مشتریان</h4>
-            <nav className="flex flex-col gap-2">
-              <Link href="#" className="text-muted-foreground hover:text-primary transition-colors text-sm">
-                پیگیری سفارش
-              </Link>
-              <Link href="#" className="text-muted-foreground hover:text-primary transition-colors text-sm">
-                شرایط بازگشت کالا
-              </Link>
-              <Link href="#" className="text-muted-foreground hover:text-primary transition-colors text-sm">
-                سوالات متداول
-              </Link>
-              <Link href="#" className="text-muted-foreground hover:text-primary transition-colors text-sm">
-                تماس با ما
-              </Link>
+            <h4 className="text-xs tracking-editorial font-medium" style={{ color: '#232323' }}>
+              خدمات مشتریان
+            </h4>
+            <nav className="flex flex-col gap-2.5">
+              {[
+                { href: '/track-order', label: 'پیگیری سفارش' },
+                { href: '#', label: 'شرایط بازگشت کالا' },
+                { href: '#', label: 'سوالات متداول' },
+                { href: '#', label: 'تماس با ما' },
+              ].map(link => (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  className="text-sm transition-colors"
+                  style={{ color: '#6F6A61' }}
+                >
+                  {link.label}
+                </Link>
+              ))}
             </nav>
           </div>
 
-          {/* Contact Info */}
+          {/* Contact */}
           <div className="space-y-4">
-            <h4 className="font-bold text-foreground">ارتباط با ما</h4>
-            <div className="space-y-3">
-              <a href="tel:02112345678" className="flex items-center gap-3 text-muted-foreground hover:text-primary transition-colors text-sm">
-                <Phone className="w-4 h-4" />
-                <span>۰۲۱-۱۲۳۴۵۶۷۸</span>
+            <h4 className="text-xs tracking-editorial font-medium" style={{ color: '#232323' }}>
+              تماس
+            </h4>
+            <div className="flex flex-col gap-3">
+              <a href="tel:02112345678" className="flex items-center gap-2.5 text-sm" style={{ color: '#6F6A61' }}>
+                <Phone className="w-3.5 h-3.5 shrink-0" strokeWidth={1.5} />
+                ۰۲۱-۱۲۳۴۵۶۷۸
               </a>
-              <a href="mailto:info@sabzpharmacy.ir" className="flex items-center gap-3 text-muted-foreground hover:text-primary transition-colors text-sm">
-                <Mail className="w-4 h-4" />
-                <span>info@sabzpharmacy.ir</span>
+              <a href="mailto:info@sabzpharmacy.ir" className="flex items-center gap-2.5 text-sm" style={{ color: '#6F6A61' }}>
+                <Mail className="w-3.5 h-3.5 shrink-0" strokeWidth={1.5} />
+                info@sabzpharmacy.ir
               </a>
-              <div className="flex items-start gap-3 text-muted-foreground text-sm">
-                <MapPin className="w-4 h-4 mt-0.5" />
-                <span>تهران، خیابان ولیعصر، پلاک ۱۲۳</span>
+              <div className="flex items-start gap-2.5 text-sm" style={{ color: '#6F6A61' }}>
+                <MapPin className="w-3.5 h-3.5 shrink-0 mt-0.5" strokeWidth={1.5} />
+                تهران، خیابان ولیعصر، پلاک ۱۲۳
               </div>
-              <a href="#" className="flex items-center gap-3 text-muted-foreground hover:text-primary transition-colors text-sm">
-                <Instagram className="w-4 h-4" />
-                <span>@sabzpharmacy</span>
-              </a>
             </div>
           </div>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="mt-12 pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-muted-foreground text-sm">
+        {/* Bottom bar */}
+        <div
+          className="mt-16 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4"
+          style={{ borderTop: '1px solid #E5DED1' }}
+        >
+          <p className="text-xs" style={{ color: '#6F6A61' }}>
             © ۱۴۰۳ داروخانه سبز. تمامی حقوق محفوظ است.
           </p>
-          <div className="flex items-center gap-6">
-            <img 
-              src="https://via.placeholder.com/60x30/f5f5f0/666666?text=eNamad" 
-              alt="نماد اعتماد الکترونیکی"
-              className="h-8 opacity-60 hover:opacity-100 transition-opacity"
-            />
-            <img 
-              src="https://via.placeholder.com/60x30/f5f5f0/666666?text=Samandehi" 
-              alt="ساماندهی"
-              className="h-8 opacity-60 hover:opacity-100 transition-opacity"
-            />
-          </div>
+          <Link href="/admin" className="text-xs transition-colors" style={{ color: '#6F6A61' }}>
+            پنل مدیریت
+          </Link>
         </div>
       </div>
     </footer>

@@ -2,174 +2,177 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { ShoppingBag, Search, Menu, X, User } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { Menu, Search, ShoppingBag, X } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { useRouter } from 'next/navigation'
 
-const navLinks = [
+const NAV_LINKS = [
   { href: '/', label: 'خانه' },
   { href: '/products', label: 'محصولات' },
   { href: '/track-order', label: 'پیگیری سفارش' },
 ]
 
 export function Header() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [query, setQuery] = useState('')
   const { totalItems } = useCart()
   const router = useRouter()
 
-  const handleSearch = (e: React.FormEvent) => {
+  function handleSearch(e: { preventDefault(): void }) {
     e.preventDefault()
-    if (searchQuery.trim()) {
-      router.push(`/products?search=${encodeURIComponent(searchQuery)}`)
-      setIsSearchOpen(false)
-      setSearchQuery('')
+    if (query.trim()) {
+      router.push(`/products?search=${encodeURIComponent(query.trim())}`)
+      setSearchOpen(false)
+      setQuery('')
     }
   }
 
   return (
-    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16 md:h-20">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">س</span>
-            </div>
-            <span className="font-bold text-xl text-foreground hidden sm:block">داروخانه سبز</span>
-          </Link>
+    <>
+      <header
+        className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm"
+        style={{ borderBottom: '1px solid #E5DED1' }}
+      >
+        <div className="max-w-7xl mx-auto px-6 md:px-10">
+          <div className="flex items-center justify-between h-16 md:h-20">
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-8">
-            {navLinks.map(link => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-muted-foreground hover:text-foreground transition-colors text-sm font-medium"
+            {/* Logo */}
+            <Link href="/" className="flex items-center gap-3 shrink-0">
+              <span
+                className="font-bold text-xl tracking-tight"
+                style={{ color: '#232323', letterSpacing: '-0.02em' }}
               >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
+                داروخانه سبز
+              </span>
+            </Link>
 
-          {/* Actions */}
-          <div className="flex items-center gap-2">
-            {/* Search Button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsSearchOpen(true)}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <Search className="w-5 h-5" />
-            </Button>
+            {/* Desktop Nav — centered */}
+            <nav className="hidden md:flex items-center gap-10 absolute left-1/2 -translate-x-1/2">
+              {NAV_LINKS.map(link => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="text-sm transition-colors duration-200"
+                  style={{ color: '#6F6A61', letterSpacing: '0.01em' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#232323' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#6F6A61' }}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
 
-            {/* Cart */}
-            <Link href="/cart">
-              <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground">
-                <ShoppingBag className="w-5 h-5" />
+            {/* Actions */}
+            <div className="flex items-center gap-3">
+              {/* Search */}
+              <button
+                onClick={() => setSearchOpen(true)}
+                className="w-9 h-9 flex items-center justify-center rounded-full transition-colors"
+                style={{ color: '#6F6A61' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#232323' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#6F6A61' }}
+                aria-label="جستجو"
+              >
+                <Search className="w-4 h-4" strokeWidth={1.5} />
+              </button>
+
+              {/* Cart */}
+              <Link href="/cart" className="relative w-9 h-9 flex items-center justify-center rounded-full transition-colors" style={{ color: '#6F6A61' }}>
+                <ShoppingBag className="w-4 h-4" strokeWidth={1.5} />
                 {totalItems > 0 && (
-                  <motion.span
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center"
+                  <span
+                    className="absolute -top-0.5 -right-0.5 w-4 h-4 flex items-center justify-center text-[10px] font-bold rounded-full text-white"
+                    style={{ backgroundColor: '#C98267' }}
                   >
                     {totalItems}
-                  </motion.span>
+                  </span>
                 )}
-              </Button>
-            </Link>
+              </Link>
 
-            {/* Admin Link */}
-            <Link href="/admin" className="hidden md:block">
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-                <User className="w-5 h-5" />
-              </Button>
-            </Link>
-
-            {/* Mobile Menu Toggle */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden text-muted-foreground"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </Button>
+              {/* Mobile menu toggle */}
+              <button
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="md:hidden w-9 h-9 flex items-center justify-center rounded-full"
+                style={{ color: '#6F6A61' }}
+                aria-label="منو"
+              >
+                {menuOpen ? <X className="w-4 h-4" strokeWidth={1.5} /> : <Menu className="w-4 h-4" strokeWidth={1.5} />}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Search Overlay */}
+        {/* Mobile menu */}
+        <AnimatePresence>
+          {menuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="md:hidden overflow-hidden bg-background"
+              style={{ borderTop: '1px solid #E5DED1' }}
+            >
+              <nav className="flex flex-col max-w-7xl mx-auto px-6 py-4 gap-1">
+                {NAV_LINKS.map(link => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="py-3 px-2 text-sm transition-colors"
+                    style={{ color: '#6F6A61', borderBottom: '1px solid #F0EBE2' }}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </nav>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </header>
+
+      {/* Search overlay */}
       <AnimatePresence>
-        {isSearchOpen && (
+        {searchOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-foreground/50 z-50 flex items-start justify-center pt-20"
-            onClick={() => setIsSearchOpen(false)}
+            className="fixed inset-0 z-60 flex items-start justify-center pt-24 px-4"
+            style={{ backgroundColor: 'rgba(35, 35, 35, 0.5)' }}
+            onClick={() => setSearchOpen(false)}
           >
             <motion.div
-              initial={{ opacity: 0, y: -20 }}
+              initial={{ opacity: 0, y: -12 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="bg-card rounded-2xl p-6 w-full max-w-lg mx-4 shadow-2xl"
+              exit={{ opacity: 0, y: -12 }}
+              className="w-full max-w-xl bg-white shadow-xl"
+              style={{ borderRadius: '4px' }}
               onClick={e => e.stopPropagation()}
             >
-              <form onSubmit={handleSearch} className="flex gap-3">
-                <Input
+              <form onSubmit={handleSearch} className="flex items-center gap-0">
+                <input
                   type="text"
                   placeholder="جستجوی محصولات..."
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  className="flex-1 text-base"
+                  value={query}
+                  onChange={e => setQuery(e.target.value)}
+                  className="flex-1 px-6 py-4 text-sm bg-transparent outline-none"
+                  style={{ color: '#232323' }}
                   autoFocus
                 />
-                <Button type="submit" className="bg-primary hover:bg-primary/90">
+                <button
+                  type="submit"
+                  className="px-6 py-4 text-sm font-medium transition-colors text-white"
+                  style={{ backgroundColor: '#C98267' }}
+                >
                   جستجو
-                </Button>
+                </button>
               </form>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Mobile Menu */}
-      <AnimatePresence>
-        {isMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-card border-b border-border overflow-hidden"
-          >
-            <nav className="container mx-auto px-4 py-4 flex flex-col gap-2">
-              {navLinks.map(link => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="py-3 px-4 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {link.label}
-                </Link>
-              ))}
-              <Link
-                href="/admin"
-                className="py-3 px-4 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                پنل مدیریت
-              </Link>
-            </nav>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </header>
+    </>
   )
 }

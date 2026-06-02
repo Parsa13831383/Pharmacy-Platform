@@ -1,12 +1,17 @@
 'use client'
 
 import Link from 'next/link'
-import { ShoppingBag, Leaf } from 'lucide-react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { ShoppingBag } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { getMediaUrl } from '@/lib/media'
-import { Button } from '@/components/ui/button'
 import type { PublicProduct } from '@/types/public-product'
+
+// ─── Animation constants ───────────────────────────────────────────────────────
+// Premium cubic-bezier curves — smooth, deliberate, never bouncy.
+const EASE_SMOOTH  = [0.25, 0.1, 0.25, 1]   as const  // Apple easing
+const EASE_ENTER   = [0.16, 1,   0.3,  1]   as const  // Gentle deceleration (items entering)
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -14,23 +19,24 @@ export function fmtPrice(amount: string | number): string {
   return Number(amount).toLocaleString('fa-IR') + ' تومان'
 }
 
-function stockLabel(qty: number, threshold: number): { text: string; cls: string } {
-  if (qty === 0) return { text: 'ناموجود', cls: 'bg-destructive/10 text-destructive' }
-  if (qty <= threshold) return { text: 'تعداد محدود', cls: 'bg-amber-50 text-amber-700 border border-amber-200' }
-  return { text: 'موجود', cls: 'bg-primary/10 text-primary' }
+function discountPercent(price: string, discounted: string): number {
+  const orig = Number(price)
+  const disc = Number(discounted)
+  if (!orig || !disc) return 0
+  return Math.round(((orig - disc) / orig) * 100)
 }
 
-const GRADIENT_BY_SLUG: Record<string, string> = {
-  skincare: 'from-emerald-50 to-teal-100',
-  cosmetics: 'from-rose-50 to-pink-100',
-  supplements: 'from-amber-50 to-yellow-100',
-  hygiene: 'from-sky-50 to-blue-100',
-  'hair-care': 'from-violet-50 to-purple-100',
-  perfumes: 'from-fuchsia-50 to-pink-100',
+const CATEGORY_GRADIENTS: Record<string, string> = {
+  skincare:    'linear-gradient(150deg, #EFE7DA 0%, #D9CFC4 100%)',
+  cosmetics:   'linear-gradient(150deg, #F2E8E8 0%, #DFD0CE 100%)',
+  supplements: 'linear-gradient(150deg, #EAEADA 0%, #D4D0C0 100%)',
+  hygiene:     'linear-gradient(150deg, #E8EEF0 0%, #CDD6D8 100%)',
+  'hair-care': 'linear-gradient(150deg, #EDE8F2 0%, #D0C8DE 100%)',
+  perfumes:    'linear-gradient(150deg, #F2E8EF 0%, #DFC9D8 100%)',
 }
 
-function gradientFor(slug: string | null | undefined): string {
-  return (slug && GRADIENT_BY_SLUG[slug]) ?? 'from-primary/5 to-primary/15'
+function placeholderGradient(slug?: string | null): string {
+  return (slug && CATEGORY_GRADIENTS[slug]) ?? 'linear-gradient(150deg, #EFE7DA 0%, #D9CFC4 100%)'
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -41,12 +47,13 @@ interface Props {
 }
 
 export function PublicProductCard({ product, index = 0 }: Props) {
+  const [hovered, setHovered] = useState(false)
   const { addItem } = useCart()
-  const stock = stockLabel(product.stockQuantity, product.lowStockThreshold)
+
+  const primaryImg   = product.images?.find(img => img.isPrimary) ?? product.images?.[0]
+  const hasDiscount  = product.discountedPrice != null
   const isOutOfStock = product.stockQuantity === 0
-  const hasDiscount = product.discountedPrice != null
-  const gradient = gradientFor(product.category?.slug)
-  const primaryImg = product.images?.find(img => img.isPrimary) ?? product.images?.[0]
+  const pct          = hasDiscount ? discountPercent(product.price, product.discountedPrice!) : 0
 
   function handleAdd(e: React.MouseEvent) {
     e.preventDefault()
@@ -55,99 +62,151 @@ export function PublicProductCard({ product, index = 0 }: Props) {
   }
 
   return (
+    // ── Scroll-reveal wrapper ──────────────────────────────────────────────
     <motion.div
-      initial={{ opacity: 0, y: 18 }}
+      initial={{ opacity: 0, y: 28 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ delay: Math.min(index * 0.06, 0.3), duration: 0.45 }}
+      viewport={{ once: true, margin: '-40px' }}
+      transition={{
+        delay: Math.min(index * 0.08, 0.32),
+        duration: 0.65,
+        ease: EASE_ENTER,
+      }}
     >
-      <Link href={`/products/${product.slug}`} className="group block h-full">
-        <div className="bg-card rounded-2xl overflow-hidden border border-border/60 hover:border-primary/30 hover:shadow-md transition-all duration-300 h-full flex flex-col">
-          {/* Image area */}
+      <Link
+        href={`/products/${product.slug}`}
+        className="block"
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+      >
+        {/* ── Card lift ─────────────────────────────────────────────────── */}
+        <motion.div
+          animate={{ y: hovered ? -6 : 0 }}
+          transition={{ duration: 0.4, ease: EASE_SMOOTH }}
+        >
+          {/* ── Image container ───────────────────────────────────────── */}
           <div
-            className={`relative aspect-4/3 ${primaryImg ? 'bg-muted/30' : `bg-linear-to-br ${gradient}`} flex items-center justify-center overflow-hidden`}
+            className="relative overflow-hidden mb-4"
+            style={{ aspectRatio: '3/4', borderRadius: 3 }}
           >
-            {primaryImg ? (
-              <img
-                src={getMediaUrl(primaryImg.imageUrl)}
-                alt={primaryImg.altText ?? product.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-            ) : (
-              <Leaf
-                className="w-12 h-12 text-primary/20 group-hover:text-primary/30 transition-colors duration-300"
-                strokeWidth={1.5}
-              />
+            {/* ── Image zoom ──────────────────────────────────────────── */}
+            <motion.div
+              className="absolute inset-0"
+              animate={{ scale: hovered ? 1.06 : 1 }}
+              transition={{ duration: 0.75, ease: EASE_SMOOTH }}
+            >
+              {primaryImg ? (
+                <img
+                  src={getMediaUrl(primaryImg.imageUrl)}
+                  alt={primaryImg.altText ?? product.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div
+                  className="w-full h-full flex items-center justify-center"
+                  style={{ background: placeholderGradient(product.category?.slug) }}
+                >
+                  <motion.div
+                    className="rounded-full"
+                    style={{ width: 56, height: 56, backgroundColor: '#6F6A61' }}
+                    animate={{ opacity: hovered ? 0.25 : 0.15, scale: hovered ? 1.08 : 1 }}
+                    transition={{ duration: 0.5, ease: EASE_SMOOTH }}
+                  />
+                </div>
+              )}
+            </motion.div>
+
+            {/* ── Subtle dark overlay on hover ────────────────────────── */}
+            <motion.div
+              className="absolute inset-0 pointer-events-none"
+              animate={{ opacity: hovered ? 0.12 : 0 }}
+              transition={{ duration: 0.4, ease: EASE_SMOOTH }}
+              style={{ backgroundColor: '#232323' }}
+            />
+
+            {/* ── Discount badge ──────────────────────────────────────── */}
+            {hasDiscount && pct > 0 && (
+              <motion.span
+                className="absolute top-3 right-3 text-xs px-2.5 py-1 font-medium text-white z-10"
+                style={{ backgroundColor: '#C98267', borderRadius: 2 }}
+                initial={{ opacity: 0, scale: 0.85 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.35, delay: index * 0.08 + 0.2, ease: EASE_ENTER }}
+              >
+                {pct}٪ تخفیف
+              </motion.span>
             )}
 
-            {/* Discount badge */}
-            {hasDiscount && (
-              <span className="absolute top-3 right-3 bg-destructive text-destructive-foreground text-xs px-2.5 py-1 rounded-full font-medium">
-                تخفیف
-              </span>
-            )}
-            {/* Stock badge */}
-            <span
-              className={`absolute top-3 left-3 text-xs px-2.5 py-1 rounded-full font-medium ${stock.cls}`}
-            >
-              {stock.text}
-            </span>
-            {/* Hover add button */}
-            <div className="absolute inset-x-3 bottom-3 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
-              <Button
-                onClick={handleAdd}
-                disabled={isOutOfStock}
-                size="sm"
-                className="w-full rounded-xl gap-1.5 bg-card/90 backdrop-blur-sm text-foreground hover:bg-primary hover:text-primary-foreground border border-border/60"
-                variant="outline"
+            {/* ── Out-of-stock overlay ─────────────────────────────────── */}
+            {isOutOfStock && (
+              <div
+                className="absolute inset-0 flex items-center justify-center z-10"
+                style={{ backgroundColor: 'rgba(247,242,232,0.78)' }}
               >
-                <ShoppingBag className="w-3.5 h-3.5" />
+                <span className="text-xs tracking-editorial" style={{ color: '#6F6A61' }}>
+                  ناموجود
+                </span>
+              </div>
+            )}
+
+            {/* ── Add-to-cart reveal ───────────────────────────────────── */}
+            {!isOutOfStock && (
+              <motion.button
+                className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 py-3.5 text-sm font-medium text-white z-10"
+                style={{ backgroundColor: '#232323', pointerEvents: hovered ? 'auto' : 'none' }}
+                animate={{ y: hovered ? 0 : 8, opacity: hovered ? 1 : 0 }}
+                transition={{ duration: 0.3, ease: EASE_SMOOTH }}
+                onClick={handleAdd}
+                whileTap={{ scale: 0.97 }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#C98267' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#232323' }}
+              >
+                <ShoppingBag className="w-3.5 h-3.5" strokeWidth={1.5} />
                 افزودن به سبد
-              </Button>
-            </div>
+              </motion.button>
+            )}
           </div>
 
-          {/* Content */}
-          <div className="p-4 flex flex-col flex-1 gap-2">
-            {/* Brand + Category */}
-            <div className="flex items-center gap-2 min-w-0">
-              {product.brand && (
-                <span className="text-xs text-muted-foreground truncate">{product.brand}</span>
-              )}
-              {product.brand && product.category && (
-                <span className="text-muted-foreground/40 text-xs">·</span>
-              )}
-              {product.category && (
-                <span className="text-xs text-muted-foreground/70 truncate">
-                  {product.category.name}
-                </span>
-              )}
-            </div>
+          {/* ── Product info ──────────────────────────────────────────── */}
+          <div className="space-y-1.5 px-0.5">
+            {product.category && (
+              <p className="text-[11px] tracking-editorial" style={{ color: '#6F6A61' }}>
+                {product.category.name}
+              </p>
+            )}
+            {product.brand && (
+              <p className="text-xs" style={{ color: '#6F6A61' }}>{product.brand}</p>
+            )}
 
-            {/* Name */}
-            <h3 className="font-medium text-foreground text-sm leading-relaxed line-clamp-2 flex-1">
+            {/* Name fades slightly on hover (focus shifts to image) */}
+            <motion.h3
+              className="text-sm font-medium leading-snug line-clamp-2"
+              style={{ color: '#232323' }}
+              animate={{ opacity: hovered ? 0.55 : 1 }}
+              transition={{ duration: 0.35, ease: EASE_SMOOTH }}
+            >
               {product.name}
-            </h3>
+            </motion.h3>
 
-            {/* Price */}
-            <div className="flex items-baseline gap-2 pt-1">
+            <div className="flex items-baseline gap-2 pt-0.5">
               {hasDiscount ? (
                 <>
-                  <span className="font-bold text-foreground text-sm">
+                  <span className="text-sm font-semibold" style={{ color: '#232323' }}>
                     {fmtPrice(product.discountedPrice!)}
                   </span>
-                  <span className="text-xs text-muted-foreground line-through">
+                  <span className="text-xs line-through" style={{ color: '#6F6A61' }}>
                     {fmtPrice(product.price)}
                   </span>
                 </>
               ) : (
-                <span className="font-bold text-foreground text-sm">
+                <span className="text-sm font-semibold" style={{ color: '#232323' }}>
                   {fmtPrice(product.price)}
                 </span>
               )}
             </div>
           </div>
-        </div>
+        </motion.div>
       </Link>
     </motion.div>
   )

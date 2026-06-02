@@ -188,9 +188,9 @@ export default function CheckoutPage() {
     <div className="min-h-screen flex flex-col" dir="rtl">
       <Header />
 
-      <main className="flex-1 bg-slate-50">
+      <main className="flex-1 bg-background">
         {/* Breadcrumb */}
-        <div className="border-b border-slate-100 bg-white">
+        <div className="border-b border-border bg-secondary">
           <div className="container mx-auto px-4 py-3">
             <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Link href="/" className="hover:text-foreground transition-colors">خانه</Link>
@@ -244,7 +244,7 @@ export default function CheckoutPage() {
 
               {/* ══ STEP 1: Cart review ══════════════════════════════════════ */}
               {step === 1 && (
-                <div className="bg-card rounded-2xl border border-border p-6">
+                <div className="bg-card border border-border rounded p-6">
                   <h2 className="font-bold text-lg text-foreground mb-5 flex items-center gap-2">
                     <ShoppingBag className="w-5 h-5 text-primary" />
                     بررسی سبد خرید
@@ -254,7 +254,7 @@ export default function CheckoutPage() {
                     <div className="text-center py-10">
                       <p className="text-muted-foreground mb-4">سبد خرید شما خالی است.</p>
                       <Link href="/products">
-                        <Button variant="outline" className="rounded-xl">مشاهده محصولات</Button>
+                        <Button variant="outline" className="rounded">مشاهده محصولات</Button>
                       </Link>
                     </div>
                   ) : (
@@ -305,7 +305,7 @@ export default function CheckoutPage() {
                       <div className="mt-6 flex justify-end">
                         <Button
                           onClick={() => setStep(2)}
-                          className="rounded-xl px-8 gap-2"
+                          className="rounded px-8 gap-2"
                         >
                           تأیید و ادامه
                           <ArrowRight className="w-4 h-4 rotate-180" />
@@ -318,7 +318,7 @@ export default function CheckoutPage() {
 
               {/* ══ STEP 2: Phone verification ═══════════════════════════════ */}
               {step === 2 && (
-                <div className="bg-card rounded-2xl border border-border p-6">
+                <div className="bg-card border border-border rounded p-6">
                   <h2 className="font-bold text-lg text-foreground mb-5 flex items-center gap-2">
                     <Phone className="w-5 h-5 text-primary" />
                     تأیید شماره موبایل
@@ -335,7 +335,7 @@ export default function CheckoutPage() {
                       </div>
                       <Button
                         onClick={() => setStep(3)}
-                        className="rounded-xl px-8 gap-2 mt-2"
+                        className="rounded px-8 gap-2 mt-2"
                       >
                         ادامه به اطلاعات ارسال
                         <ArrowRight className="w-4 h-4 rotate-180" />
@@ -370,7 +370,7 @@ export default function CheckoutPage() {
                           type="submit"
                           disabled={sendingOtp || (otpSent && cooldown > 0)}
                           variant={otpSent ? 'outline' : 'default'}
-                          className="w-full rounded-xl h-11"
+                          className="w-full rounded h-11"
                         >
                           {sendingOtp ? (
                             <span className="flex items-center gap-2">
@@ -387,7 +387,7 @@ export default function CheckoutPage() {
 
                       {/* Dev code hint */}
                       {devCode && (
-                        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                        <div className="bg-amber-50 border border-amber-200 rounded px-4 py-3">
                           <p className="text-amber-800 text-xs font-medium mb-0.5">کد تست (محیط توسعه)</p>
                           <p className="text-amber-900 font-mono font-bold text-xl tracking-[0.3em]">
                             {devCode}
@@ -424,7 +424,7 @@ export default function CheckoutPage() {
                           <Button
                             type="submit"
                             disabled={verifyingOtp || otpCode.length !== 6}
-                            className="w-full rounded-xl h-11"
+                            className="w-full rounded h-11"
                           >
                             {verifyingOtp ? (
                               <span className="flex items-center gap-2">
@@ -444,14 +444,14 @@ export default function CheckoutPage() {
 
               {/* ══ STEP 3: Delivery details ══════════════════════════════════ */}
               {step === 3 && (
-                <div className="bg-card rounded-2xl border border-border p-6">
+                <div className="bg-card border border-border rounded p-6">
                   <h2 className="font-bold text-lg text-foreground mb-5">
                     اطلاعات ارسال
                   </h2>
 
                   <div className="space-y-5 max-w-lg">
                     {/* Verified phone badge */}
-                    <div className="flex items-center gap-2 text-sm text-primary bg-primary/8 rounded-xl px-3 py-2 w-fit">
+                    <div className="flex items-center gap-2 text-sm text-primary bg-primary/8 rounded px-3 py-2 w-fit">
                       <Lock className="w-3.5 h-3.5" />
                       <span>موبایل تأیید شده:</span>
                       <span dir="ltr" className="font-mono font-medium">{phone}</span>
@@ -506,7 +506,7 @@ export default function CheckoutPage() {
                             key={opt.value}
                             type="button"
                             onClick={() => setContactMethod(opt.value)}
-                            className={`px-4 py-2 rounded-xl border text-sm font-medium transition-colors ${
+                            className={`px-4 py-2 rounded border text-sm font-medium transition-colors ${
                               contactMethod === opt.value
                                 ? 'bg-primary text-primary-foreground border-primary'
                                 : 'bg-card text-muted-foreground border-border hover:border-primary/50 hover:text-foreground'
@@ -528,7 +528,7 @@ export default function CheckoutPage() {
                             type="button"
                             disabled={opt.disabled}
                             onClick={() => !opt.disabled && setPaymentMethod(opt.value)}
-                            className={`px-4 py-2 rounded-xl border text-sm font-medium transition-colors ${
+                            className={`px-4 py-2 rounded border text-sm font-medium transition-colors ${
                               opt.disabled
                                 ? 'opacity-40 cursor-not-allowed bg-muted text-muted-foreground border-border'
                                 : paymentMethod === opt.value
@@ -553,7 +553,7 @@ export default function CheckoutPage() {
                           setStep(4)
                         }}
                         disabled={!customerName.trim() || !deliveryAddress.trim()}
-                        className="rounded-xl px-8 gap-2"
+                        className="rounded px-8 gap-2"
                       >
                         بررسی و ثبت سفارش
                         <ArrowRight className="w-4 h-4 rotate-180" />
@@ -567,7 +567,7 @@ export default function CheckoutPage() {
               {step === 4 && (
                 <div className="space-y-4">
                   {/* Info summary */}
-                  <div className="bg-card rounded-2xl border border-border p-6">
+                  <div className="bg-card border border-border rounded p-6">
                     <h2 className="font-bold text-lg text-foreground mb-4">بررسی اطلاعات</h2>
 
                     <div className="divide-y divide-border text-sm">
@@ -595,7 +595,7 @@ export default function CheckoutPage() {
                   </div>
 
                   {/* Cart items summary */}
-                  <div className="bg-card rounded-2xl border border-border p-6">
+                  <div className="bg-card border border-border rounded p-6">
                     <h2 className="font-bold text-foreground mb-4 text-sm">اقلام سفارش</h2>
                     <div className="divide-y divide-border">
                       {items.map(item => (
@@ -630,7 +630,7 @@ export default function CheckoutPage() {
                     onClick={handleSubmit}
                     disabled={submitting || items.length === 0}
                     size="lg"
-                    className="w-full rounded-xl h-14 text-base"
+                    className="w-full rounded h-14 text-base"
                   >
                     {submitting ? (
                       <span className="flex items-center gap-3">
@@ -647,7 +647,7 @@ export default function CheckoutPage() {
 
             {/* ── Order summary sidebar ─────────────────────────────────────── */}
             <div className="lg:col-span-1">
-              <div className="bg-card rounded-2xl border border-border p-5 sticky top-24">
+              <div className="bg-card border border-border rounded p-5 sticky top-24">
                 <h3 className="font-bold text-foreground mb-4 text-sm">خلاصه سفارش</h3>
 
                 {items.length === 0 ? (

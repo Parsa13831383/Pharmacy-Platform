@@ -3,54 +3,52 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowRight, CheckCircle, Leaf, Minus, Plus, ShoppingBag } from 'lucide-react'
+import { ArrowRight, CheckCircle, Minus, Plus, ShoppingBag } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
 import { PublicProductCard, fmtPrice } from '@/components/public-product-card'
-import { Button } from '@/components/ui/button'
 import { getPublicProductBySlug, getPublicProducts } from '@/lib/api'
 import { getMediaUrl } from '@/lib/media'
 import { useCart } from '@/lib/cart-context'
 import type { PublicProduct, PublicProductImage } from '@/types/public-product'
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function stockBadge(qty: number, threshold: number) {
-  if (qty === 0) return { text: 'ناموجود', cls: 'bg-red-50 text-red-600 border border-red-200' }
-  if (qty <= threshold) return { text: 'تعداد محدود', cls: 'bg-amber-50 text-amber-700 border border-amber-200' }
-  return { text: 'موجود', cls: 'bg-emerald-50 text-emerald-700 border border-emerald-200' }
+const C = {
+  bg:     '#F7F2E8',
+  bg2:    '#EFE7DA',
+  dark:   '#232323',
+  muted:  '#6F6A61',
+  border: '#E5DED1',
+  green:  '#2F7A4D',
+  cta:    '#C98267',
+  ctaHov: '#B5704F',
+  white:  '#FFFFFF',
 }
 
-const GRADIENT_BY_SLUG: Record<string, string> = {
-  skincare: 'from-emerald-50 to-teal-100',
-  cosmetics: 'from-rose-50 to-pink-100',
-  supplements: 'from-amber-50 to-yellow-100',
-  hygiene: 'from-sky-50 to-blue-100',
-  'hair-care': 'from-violet-50 to-purple-100',
-  perfumes: 'from-fuchsia-50 to-pink-100',
+const CATEGORY_GRADIENTS: Record<string, string> = {
+  skincare:    'linear-gradient(160deg, #D9CFC4 0%, #C8BFB2 100%)',
+  cosmetics:   'linear-gradient(160deg, #DFD0CE 0%, #CEC0BE 100%)',
+  supplements: 'linear-gradient(160deg, #D4D0C0 0%, #C4C0B0 100%)',
+  hygiene:     'linear-gradient(160deg, #CDD6D8 0%, #BCC8CA 100%)',
+  'hair-care': 'linear-gradient(160deg, #D0C8DE 0%, #C0B8CE 100%)',
 }
 
-function gradientFor(slug: string | null | undefined) {
-  return (slug && GRADIENT_BY_SLUG[slug]) ?? 'from-primary/5 to-primary/15'
+function placeholderGradient(slug?: string | null) {
+  return (slug && CATEGORY_GRADIENTS[slug]) ?? 'linear-gradient(160deg, #D9CFC4 0%, #C8BFB2 100%)'
 }
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>()
   const router = useRouter()
   const { addItem } = useCart()
 
-  const [product, setProduct] = useState<PublicProduct | null>(null)
-  const [related, setRelated] = useState<PublicProduct[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [product, setProduct]   = useState<PublicProduct | null>(null)
+  const [related, setRelated]   = useState<PublicProduct[]>([])
+  const [loading, setLoading]   = useState(true)
+  const [error, setError]       = useState('')
   const [quantity, setQuantity] = useState(1)
-  const [added, setAdded] = useState(false)
-
-  // Image gallery state — must be at component level (React rules of hooks)
-  const [selectedImage, setSelectedImage] = useState<PublicProductImage | null>(null)
+  const [added, setAdded]       = useState(false)
+  const [selectedImg, setSelectedImg] = useState<PublicProductImage | null>(null)
 
   useEffect(() => {
     if (!slug) return
@@ -58,19 +56,17 @@ export default function ProductDetailPage() {
     setError('')
     setAdded(false)
     setQuantity(1)
-    setSelectedImage(null)
+    setSelectedImg(null)
 
     getPublicProductBySlug(slug)
       .then(p => {
         setProduct(p)
-        // Set initial selected image: primary first, then first available
         const imgs = p.images ?? []
-        setSelectedImage(imgs.find(i => i.isPrimary) ?? imgs[0] ?? null)
-        // Fetch related: same category, newest, exclude self
+        setSelectedImg(imgs.find(i => i.isPrimary) ?? imgs[0] ?? null)
         const catSlug = p.category?.slug
         getPublicProducts({ sort: 'newest', ...(catSlug ? { category: catSlug } : {}) })
           .then(all => setRelated(all.filter(r => r.id !== p.id).slice(0, 4)))
-          .catch(() => {/* related products are non-critical */})
+          .catch(() => {})
       })
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false))
@@ -88,95 +84,102 @@ export default function ProductDetailPage() {
     setQuantity(q => Math.min(Math.max(1, q + delta), product.stockQuantity || 1))
   }
 
-  const stock = product ? stockBadge(product.stockQuantity, product.lowStockThreshold) : null
   const productImages = product?.images ?? []
-
-  // ─────────────────────────────────────────────────────────────────────────
+  const isOutOfStock  = (product?.stockQuantity ?? 0) === 0
+  const hasDiscount   = product?.discountedPrice != null
 
   return (
-    <div className="min-h-screen flex flex-col" dir="rtl">
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: C.bg }} dir="rtl">
       <Header />
 
       <main className="flex-1">
         {/* Breadcrumb */}
-        <div className="container mx-auto px-4 pt-6 pb-2">
-          <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Link href="/" className="hover:text-foreground transition-colors">
-              خانه
-            </Link>
-            <ArrowRight className="w-3 h-3" />
-            <Link href="/products" className="hover:text-foreground transition-colors">
-              محصولات
-            </Link>
-            {product && (
-              <>
-                <ArrowRight className="w-3 h-3" />
-                <span className="text-foreground">{product.name}</span>
-              </>
-            )}
-          </nav>
+        <div
+          className="py-4"
+          style={{ backgroundColor: C.bg2, borderBottom: `1px solid ${C.border}` }}
+        >
+          <div className="max-w-7xl mx-auto px-6 md:px-10">
+            <nav className="flex items-center gap-2 text-xs" style={{ color: C.muted }}>
+              <Link href="/" className="transition-colors hover:text-[#232323]">خانه</Link>
+              <ArrowRight className="w-3 h-3" strokeWidth={1.5} />
+              <Link href="/products" className="transition-colors hover:text-[#232323]">محصولات</Link>
+              {product && (
+                <>
+                  <ArrowRight className="w-3 h-3" strokeWidth={1.5} />
+                  <span style={{ color: C.dark }}>{product.name}</span>
+                </>
+              )}
+            </nav>
+          </div>
         </div>
 
         {loading ? (
-          <div className="container mx-auto px-4 py-20 flex items-center justify-center text-muted-foreground gap-3">
-            <span className="w-5 h-5 border-2 border-muted border-t-primary rounded-full animate-spin" />
-            <span className="text-sm">در حال بارگذاری...</span>
+          <div className="max-w-7xl mx-auto px-6 md:px-10 py-32 flex items-center justify-center">
+            <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: C.border, borderTopColor: C.dark }} />
           </div>
         ) : error ? (
-          <div className="container mx-auto px-4 py-20 text-center">
-            <p className="text-muted-foreground mb-4">{error}</p>
-            <Button variant="outline" className="rounded-xl" onClick={() => router.back()}>
-              بازگشت
-            </Button>
+          <div className="max-w-7xl mx-auto px-6 md:px-10 py-24 text-center">
+            <p className="text-sm mb-4" style={{ color: C.muted }}>{error}</p>
+            <button onClick={() => router.back()} className="text-sm underline" style={{ color: C.dark }}>بازگشت</button>
           </div>
         ) : !product ? null : (
           <>
-            {/* ── Product section ───────────────────────────────────────────── */}
-            <section className="container mx-auto px-4 py-8 md:py-12">
-              <div className="grid md:grid-cols-2 gap-8 lg:gap-14 items-start">
+            {/* Product section */}
+            <section className="max-w-7xl mx-auto px-6 md:px-10 py-12 md:py-20">
+              <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-start">
 
                 {/* Image gallery */}
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.97 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.5 }}
+                  initial={{ opacity: 0, x: 16 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6, ease: 'easeOut' }}
                   className="space-y-3"
                 >
                   {/* Main image */}
                   <div
-                    className={`aspect-square rounded-3xl overflow-hidden ${
-                      selectedImage ? 'bg-muted/30' : `bg-linear-to-br ${gradientFor(product.category?.slug)}`
-                    } flex items-center justify-center`}
+                    className="relative overflow-hidden"
+                    style={{
+                      aspectRatio: '4/5',
+                      background: selectedImg ? '#F7F2E8' : placeholderGradient(product.category?.slug),
+                      borderRadius: '4px',
+                    }}
                   >
-                    {selectedImage ? (
+                    {selectedImg ? (
                       <img
-                        src={getMediaUrl(selectedImage.imageUrl)}
-                        alt={selectedImage.altText ?? product.name}
+                        src={getMediaUrl(selectedImg.imageUrl)}
+                        alt={selectedImg.altText ?? product.name}
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <Leaf className="w-24 h-24 text-primary/20" strokeWidth={1} />
+                      <div className="w-full h-full flex items-center justify-center" style={{ background: placeholderGradient(product.category?.slug) }}>
+                        <div className="w-24 h-24 rounded-full opacity-20" style={{ backgroundColor: C.muted }} />
+                      </div>
+                    )}
+                    {hasDiscount && (
+                      <span
+                        className="absolute top-4 right-4 text-xs px-2.5 py-1 font-medium text-white"
+                        style={{ backgroundColor: C.cta, borderRadius: '2px' }}
+                      >
+                        تخفیف
+                      </span>
                     )}
                   </div>
 
-                  {/* Thumbnail strip — only shown when there are multiple images */}
+                  {/* Thumbnails */}
                   {productImages.length > 1 && (
                     <div className="flex gap-2 overflow-x-auto pb-1">
                       {productImages.map(img => (
                         <button
                           key={img.id}
-                          onClick={() => setSelectedImage(img)}
-                          className={`shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-colors ${
-                            selectedImage?.id === img.id
-                              ? 'border-primary'
-                              : 'border-border hover:border-primary/50'
-                          }`}
+                          onClick={() => setSelectedImg(img)}
+                          className="shrink-0 w-16 h-16 overflow-hidden transition-all"
+                          style={{
+                            borderRadius: '3px',
+                            outline: selectedImg?.id === img.id ? `2px solid ${C.dark}` : `1px solid ${C.border}`,
+                            outlineOffset: selectedImg?.id === img.id ? '2px' : '0',
+                          }}
                         >
-                          <img
-                            src={getMediaUrl(img.imageUrl)}
-                            alt=""
-                            className="w-full h-full object-cover"
-                          />
+                          <img src={getMediaUrl(img.imageUrl)} alt="" className="w-full h-full object-cover" />
                         </button>
                       ))}
                     </div>
@@ -185,145 +188,173 @@ export default function ProductDetailPage() {
 
                 {/* Product info */}
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.1 }}
-                  className="space-y-6"
+                  transition={{ duration: 0.6, delay: 0.1, ease: 'easeOut' }}
+                  className="space-y-7 md:pt-4"
                 >
                   {/* Category + brand */}
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-3 flex-wrap">
                     {product.category && (
                       <Link
                         href={`/products?category=${product.category.slug}`}
-                        className="text-xs bg-cyan-100 text-cyan-700 px-3 py-1 rounded-full hover:bg-cyan-200 transition-colors"
+                        className="text-[11px] tracking-editorial transition-colors"
+                        style={{ color: C.green }}
                       >
                         {product.category.name}
                       </Link>
                     )}
                     {product.brand && (
-                      <span className="text-sm text-muted-foreground">{product.brand}</span>
+                      <span className="text-xs" style={{ color: C.muted }}>— {product.brand}</span>
                     )}
                   </div>
 
                   {/* Name */}
-                  <h1 className="text-2xl md:text-3xl font-bold text-foreground leading-snug">
+                  <h1
+                    className="text-2xl md:text-3xl font-bold leading-snug"
+                    style={{ color: C.dark, letterSpacing: '-0.02em' }}
+                  >
                     {product.name}
                   </h1>
 
-                  {/* Stock badge */}
-                  {stock && (
-                    <span className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full ${stock.cls}`}>
-                      {stock.text}
-                    </span>
-                  )}
+                  {/* Stock indicator */}
+                  <div>
+                    {isOutOfStock ? (
+                      <span className="text-xs tracking-editorial" style={{ color: C.muted }}>ناموجود</span>
+                    ) : product.stockQuantity <= product.lowStockThreshold ? (
+                      <span className="text-xs" style={{ color: C.cta }}>تعداد محدود</span>
+                    ) : (
+                      <span className="text-xs" style={{ color: C.green }}>موجود</span>
+                    )}
+                  </div>
 
                   {/* Price */}
-                  <div className="space-y-1">
-                    {product.discountedPrice ? (
-                      <>
-                        <p className="text-3xl font-bold text-foreground">
-                          {fmtPrice(product.discountedPrice)}
-                        </p>
-                        <p className="text-sm text-muted-foreground line-through">
+                  <div className="space-y-1 py-2" style={{ borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}` }}>
+                    {hasDiscount ? (
+                      <div className="flex items-baseline gap-3">
+                        <span className="text-2xl font-bold" style={{ color: C.dark }}>
+                          {fmtPrice(product.discountedPrice!)}
+                        </span>
+                        <span className="text-sm line-through" style={{ color: C.muted }}>
                           {fmtPrice(product.price)}
-                        </p>
-                      </>
+                        </span>
+                      </div>
                     ) : (
-                      <p className="text-3xl font-bold text-foreground">
+                      <span className="text-2xl font-bold" style={{ color: C.dark }}>
                         {fmtPrice(product.price)}
-                      </p>
+                      </span>
                     )}
                   </div>
 
                   {/* Description */}
                   {product.description && (
-                    <p className="text-muted-foreground leading-relaxed text-sm">
+                    <p className="text-sm leading-relaxed" style={{ color: C.muted }}>
                       {product.description}
                     </p>
                   )}
 
                   {/* SKU */}
                   {product.sku && (
-                    <p className="text-xs text-muted-foreground">
-                      کد محصول:{' '}
-                      <span className="font-mono bg-muted px-1.5 py-0.5 rounded">{product.sku}</span>
+                    <p className="text-xs" style={{ color: C.muted }}>
+                      کد: <span dir="ltr" className="font-mono">{product.sku}</span>
                     </p>
                   )}
 
-                  {/* Quantity + Add to cart */}
-                  {product.stockQuantity > 0 && (
-                    <div className="flex items-center gap-4 pt-2">
-                      <div className="flex items-center gap-1 bg-muted rounded-xl p-1">
-                        <button
-                          onClick={() => adjustQty(-1)}
-                          disabled={quantity <= 1}
-                          className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-card transition-colors disabled:opacity-40"
-                          aria-label="کاهش تعداد"
+                  {/* Quantity + CTA */}
+                  {!isOutOfStock ? (
+                    <div className="space-y-4">
+                      {/* Qty selector */}
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="flex items-center gap-0 border"
+                          style={{ borderColor: C.border, borderRadius: '3px', width: 'fit-content' }}
                         >
-                          <Minus className="w-3.5 h-3.5" />
-                        </button>
-                        <span className="w-10 text-center font-medium text-sm tabular-nums">
-                          {quantity.toLocaleString('fa-IR')}
+                          <button
+                            onClick={() => adjustQty(-1)}
+                            disabled={quantity <= 1}
+                            className="w-10 h-10 flex items-center justify-center transition-colors disabled:opacity-30"
+                            style={{ color: C.dark, borderLeft: `1px solid ${C.border}` }}
+                          >
+                            <Minus className="w-3.5 h-3.5" strokeWidth={1.5} />
+                          </button>
+                          <span className="w-12 text-center text-sm font-medium tabular-nums" style={{ color: C.dark }}>
+                            {quantity.toLocaleString('fa-IR')}
+                          </span>
+                          <button
+                            onClick={() => adjustQty(1)}
+                            disabled={quantity >= product.stockQuantity}
+                            className="w-10 h-10 flex items-center justify-center transition-colors disabled:opacity-30"
+                            style={{ color: C.dark, borderRight: `1px solid ${C.border}` }}
+                          >
+                            <Plus className="w-3.5 h-3.5" strokeWidth={1.5} />
+                          </button>
+                        </div>
+                        <span className="text-xs" style={{ color: C.muted }}>
+                          {product.stockQuantity.toLocaleString('fa-IR')} عدد موجود
                         </span>
-                        <button
-                          onClick={() => adjustQty(1)}
-                          disabled={quantity >= product.stockQuantity}
-                          className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-card transition-colors disabled:opacity-40"
-                          aria-label="افزایش تعداد"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                        </button>
                       </div>
 
-                      <Button
+                      {/* Add to cart */}
+                      <button
                         onClick={handleAdd}
                         disabled={added}
-                        className="flex-1 max-w-xs rounded-xl h-11 gap-2 bg-cyan-600 hover:bg-cyan-700 text-white"
+                        className="w-full flex items-center justify-center gap-2 py-4 text-sm font-medium text-white transition-colors"
+                        style={{
+                          backgroundColor: added ? C.green : C.cta,
+                          borderRadius: '3px',
+                        }}
+                        onMouseEnter={e => { if (!added) (e.currentTarget as HTMLElement).style.backgroundColor = C.ctaHov }}
+                        onMouseLeave={e => { if (!added) (e.currentTarget as HTMLElement).style.backgroundColor = C.cta }}
                       >
                         {added ? (
                           <>
-                            <CheckCircle className="w-4 h-4" />
-                            افزوده شد
+                            <CheckCircle className="w-4 h-4" strokeWidth={1.5} />
+                            به سبد افزوده شد
                           </>
                         ) : (
                           <>
-                            <ShoppingBag className="w-4 h-4" />
+                            <ShoppingBag className="w-4 h-4" strokeWidth={1.5} />
                             افزودن به سبد
                           </>
                         )}
-                      </Button>
+                      </button>
+
+                      {added && (
+                        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+                          <Link
+                            href="/cart"
+                            className="block w-full text-center py-3 text-sm border transition-colors"
+                            style={{ borderColor: C.border, color: C.dark, borderRadius: '3px' }}
+                          >
+                            مشاهده سبد خرید
+                          </Link>
+                        </motion.div>
+                      )}
                     </div>
-                  )}
-
-                  {product.stockQuantity === 0 && (
-                    <Button disabled className="w-full max-w-xs rounded-xl h-11" variant="outline">
-                      ناموجود
-                    </Button>
-                  )}
-
-                  {added && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
+                  ) : (
+                    <div
+                      className="w-full py-4 text-center text-sm"
+                      style={{ border: `1px solid ${C.border}`, borderRadius: '3px', color: C.muted }}
                     >
-                      <Link href="/cart">
-                        <Button variant="outline" size="sm" className="rounded-xl gap-1.5">
-                          <ShoppingBag className="w-3.5 h-3.5" />
-                          مشاهده سبد خرید
-                        </Button>
-                      </Link>
-                    </motion.div>
+                      این محصول موجود نیست
+                    </div>
                   )}
                 </motion.div>
               </div>
             </section>
 
-            {/* ── Related products ──────────────────────────────────────────── */}
+            {/* Related products */}
             {related.length > 0 && (
-              <section className="bg-secondary/20 py-12 md:py-16">
-                <div className="container mx-auto px-4">
-                  <h2 className="text-xl font-bold text-foreground mb-8">محصولات مرتبط</h2>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+              <section
+                className="py-14 md:py-20"
+                style={{ backgroundColor: C.bg2, borderTop: `1px solid ${C.border}` }}
+              >
+                <div className="max-w-7xl mx-auto px-6 md:px-10">
+                  <div className="mb-10">
+                    <p className="text-xs tracking-editorial mb-2" style={{ color: C.muted }}>پیشنهاد</p>
+                    <h2 className="text-xl font-bold" style={{ color: C.dark, letterSpacing: '-0.02em' }}>محصولات مرتبط</h2>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
                     {related.map((p, i) => (
                       <PublicProductCard key={p.id} product={p} index={i} />
                     ))}
