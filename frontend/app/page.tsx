@@ -17,7 +17,7 @@ import {
   HygieneSVG,
   FragranceSVG,
 } from '@/components/public/brand-visuals'
-import { BotanicalPhilosophyLayer } from '@/components/public/botanical-philosophy'
+import { ProductMoleculesLayer } from '@/components/public/product-molecules'
 import {
   getFeaturedCategories,
   getHomepageSettings,
@@ -457,15 +457,14 @@ export default function HomePage() {
 
         {/* ══ BRAND PHILOSOPHY ══════════════════════════════════════════════════
             Signature quote — very large type, maximal whitespace.
-            Botanical layer lives in the surrounding negative space at low opacity
-            so it supports the typography without competing with it.
+            Product molecule layer occupies the surrounding negative space.
         */}
         <section
           className="relative py-28 md:py-48 overflow-hidden"
           style={{ backgroundColor: C.bg }}
         >
-          {/* Animated botanical environment — absolute, aria-hidden, z-0 */}
-          <BotanicalPhilosophyLayer />
+          {/* Floating product molecules — absolute, aria-hidden, z-0 */}
+          <ProductMoleculesLayer />
 
           {/* Quote — above botanical layer */}
           <FadeIn y={16} className="relative z-10 max-w-4xl mx-auto px-6 md:px-10 text-center">
