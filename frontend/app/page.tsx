@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
-import { AnimatePresence, motion, useInView, useScroll, useTransform } from 'framer-motion'
+import { AnimatePresence, motion, useInView, useReducedMotion, useScroll, useTransform } from 'framer-motion'
 import { ArrowLeft, BadgeCheck, Leaf, Search, ShieldCheck, Truck } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Header } from '@/components/layout/header'
@@ -32,23 +32,24 @@ const EASE_ENTER  = [0.16, 1,   0.3,  1] as const
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
-  bg:     '#FAFAF8',
-  bg2:    '#EFE7DA',
-  dark:   '#232323',
-  muted:  '#6F6A61',
-  border: '#E5DED1',
-  green:  '#2F7A4D',
-  cta:    '#C98267',
-  ctaHov: '#B5704F',
-  white:  '#FFFFFF',
+  bg:      '#FAFAF8',
+  bg2:     '#EFE7DA',
+  dark:    '#232323',
+  ink:     '#1C1A18',   // near-black for dark sections
+  muted:   '#6F6A61',
+  border:  '#E5DED1',
+  green:   '#2F7A4D',
+  cta:     '#C98267',
+  ctaHov:  '#B5704F',
+  white:   '#FFFFFF',
 }
 
 // ─── Viewport fade-in ─────────────────────────────────────────────────────────
 function FadeIn({
   children,
   delay = 0,
-  duration = 0.6,
-  y = 20,
+  duration = 0.65,
+  y = 22,
   className,
   style,
 }: {
@@ -60,7 +61,7 @@ function FadeIn({
   style?: React.CSSProperties
 }) {
   const ref    = useRef<HTMLDivElement>(null)
-  const inView = useInView(ref, { once: true, margin: '-48px' })
+  const inView = useInView(ref, { once: true, margin: '-56px' })
   return (
     <motion.div
       ref={ref}
@@ -75,24 +76,7 @@ function FadeIn({
   )
 }
 
-// ─── Section heading ──────────────────────────────────────────────────────────
-function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) {
-  return (
-    <div>
-      <p className="text-xs tracking-editorial mb-2.5" style={{ color: C.muted }}>
-        {eyebrow}
-      </p>
-      <h2
-        className="text-2xl md:text-3xl font-bold"
-        style={{ color: C.dark, letterSpacing: '-0.025em', lineHeight: 1.15 }}
-      >
-        {title}
-      </h2>
-    </div>
-  )
-}
-
-// ─── CTA button ───────────────────────────────────────────────────────────────
+// ─── CTA button — three variants ──────────────────────────────────────────────
 function CtaButton({
   href,
   children,
@@ -101,14 +85,28 @@ function CtaButton({
 }: {
   href: string
   children: React.ReactNode
-  variant?: 'primary' | 'outline'
+  variant?: 'primary' | 'outline' | 'ghost'
   fullWidthMobile?: boolean
 }) {
   const [hov, setHov] = useState(false)
-  const isPrimary = variant === 'primary'
-  const bg  = isPrimary ? (hov ? C.ctaHov : C.cta) : hov ? C.bg2 : 'transparent'
-  const clr = isPrimary ? C.white : C.dark
-  const brd = isPrimary ? 'none' : `1px solid ${C.border}`
+
+  const styles: Record<string, React.CSSProperties> = {
+    primary: {
+      backgroundColor: hov ? C.ctaHov : C.cta,
+      color: C.white,
+      border: 'none',
+    },
+    outline: {
+      backgroundColor: hov ? C.bg2 : 'transparent',
+      color: C.dark,
+      border: `1px solid ${C.border}`,
+    },
+    ghost: {
+      backgroundColor: 'transparent',
+      color: hov ? 'rgba(255,255,255,0.7)' : C.white,
+      border: `1px solid rgba(255,255,255,0.25)`,
+    },
+  }
 
   return (
     <Link href={href} className={fullWidthMobile ? 'block sm:inline-block' : ''}>
@@ -116,13 +114,7 @@ function CtaButton({
         className={`flex items-center justify-center gap-2 px-8 py-3.5 text-sm font-medium ${
           fullWidthMobile ? 'w-full sm:w-auto' : ''
         }`}
-        style={{
-          backgroundColor: bg,
-          color: clr,
-          border: brd,
-          borderRadius: 3,
-          transition: 'background-color 0.22s ease',
-        }}
+        style={{ ...styles[variant], borderRadius: 3, transition: 'background-color 0.2s ease, color 0.2s ease' }}
         whileTap={{ scale: 0.97 }}
         transition={{ duration: 0.12 }}
         onMouseEnter={() => setHov(true)}
@@ -130,8 +122,8 @@ function CtaButton({
       >
         {children}
         <motion.span
-          animate={{ x: hov ? -3 : 0 }}
-          transition={{ duration: 0.25, ease: EASE_SMOOTH }}
+          animate={{ x: hov ? -4 : 0 }}
+          transition={{ duration: 0.22, ease: EASE_SMOOTH }}
           style={{ display: 'flex' }}
         >
           <ArrowLeft className="w-4 h-4" strokeWidth={1.5} />
@@ -147,7 +139,7 @@ function PremiumSearchBar() {
   const [query, setQuery]     = useState('')
   const router = useRouter()
 
-  function handleSearch(e: React.FormEvent) {
+  function handleSearch(e: { preventDefault(): void }) {
     e.preventDefault()
     router.push(
       query.trim()
@@ -217,7 +209,7 @@ function PremiumSearchBar() {
   )
 }
 
-// ─── Category cards ───────────────────────────────────────────────────────────
+// ─── Category card ────────────────────────────────────────────────────────────
 const CATEGORY_CARDS = [
   { slug: 'skincare',    label: 'مراقبت پوست', sub: 'کرم، سرم، مرطوب‌کننده',    SVG: SkincareSVG    },
   { slug: 'hair-care',   label: 'مراقبت مو',   sub: 'شامپو، ماسک، سرم مو',       SVG: HairCareSVG    },
@@ -230,72 +222,66 @@ function CategoryCard({
   slug, label, sub, SVG, index,
 }: (typeof CATEGORY_CARDS)[0] & { index: number }) {
   const [hov, setHov] = useState(false)
+  const ref    = useRef<HTMLDivElement>(null)
+  const inView = useInView(ref, { once: true, margin: '-32px' })
 
   return (
-    <FadeIn delay={index * 0.08}>
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 18 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.55, delay: index * 0.07, ease: EASE_ENTER }}
+    >
       <Link
         href={`/products?category=${slug}`}
         className="block relative overflow-hidden"
-        style={{ borderRadius: 6, aspectRatio: '3/4' }}
+        style={{ borderRadius: 8, aspectRatio: '3/4' }}
         onMouseEnter={() => setHov(true)}
         onMouseLeave={() => setHov(false)}
       >
-        {/* Background SVG with scale on hover */}
         <motion.div
           className="absolute inset-0"
-          animate={{ scale: hov ? 1.04 : 1 }}
-          transition={{ duration: 0.7, ease: EASE_SMOOTH }}
+          animate={{ scale: hov ? 1.05 : 1 }}
+          transition={{ duration: 0.8, ease: EASE_SMOOTH }}
         >
           <SVG />
         </motion.div>
 
-        {/* Hover overlay */}
         <motion.div
           className="absolute inset-0 pointer-events-none"
-          animate={{ opacity: hov ? 0.2 : 0 }}
+          animate={{ opacity: hov ? 0.25 : 0.06 }}
           transition={{ duration: 0.4 }}
           style={{ backgroundColor: C.dark }}
         />
 
-        {/* Text */}
+        {/* Bottom gradient for text legibility */}
+        <div
+          className="absolute inset-x-0 bottom-0 h-2/3 pointer-events-none"
+          style={{ background: 'linear-gradient(to top, rgba(30,25,20,0.65) 0%, transparent 100%)' }}
+        />
+
         <div className="absolute inset-0 flex flex-col justify-end p-4 md:p-5">
-          <motion.div
-            className="h-px mb-3"
-            animate={{ width: hov ? '100%' : '0%' }}
-            transition={{ duration: 0.5, ease: EASE_ENTER }}
-            style={{ backgroundColor: C.white }}
-          />
-          <p
-            className="text-[10px] tracking-editorial mb-1"
-            style={{ color: 'rgba(255,255,255,0.65)' }}
-          >
+          <p className="text-[10px] tracking-editorial mb-1" style={{ color: 'rgba(255,255,255,0.55)' }}>
             مجموعه
           </p>
-          <h3
-            className="text-sm md:text-base font-bold leading-tight"
-            style={{ color: '#F0EBE2', textShadow: '0 1px 10px rgba(0,0,0,0.3)' }}
-          >
+          <h3 className="text-sm md:text-base font-semibold leading-tight" style={{ color: '#F5F0EC' }}>
             {label}
           </h3>
-          <motion.div
-            animate={{ height: hov ? 28 : 0, opacity: hov ? 1 : 0 }}
-            transition={{ duration: 0.35, ease: EASE_SMOOTH }}
-            style={{ overflow: 'hidden' }}
+          <motion.p
+            animate={{ opacity: hov ? 1 : 0, y: hov ? 0 : 6 }}
+            transition={{ duration: 0.28, ease: EASE_SMOOTH }}
+            className="text-xs mt-1 leading-snug"
+            style={{ color: 'rgba(255,255,255,0.55)' }}
           >
-            <p
-              className="text-xs mt-1 leading-snug"
-              style={{ color: 'rgba(255,255,255,0.6)' }}
-            >
-              {sub}
-            </p>
-          </motion.div>
+            {sub}
+          </motion.p>
         </div>
       </Link>
-    </FadeIn>
+    </motion.div>
   )
 }
 
-// ─── Why choose us ────────────────────────────────────────────────────────────
+// ─── Trust items ──────────────────────────────────────────────────────────────
 const WHY_ITEMS = [
   { icon: BadgeCheck,  title: 'ضمانت اصالت کالا', desc: 'تمامی محصولات دارای گواهی اصالت از تامین‌کننده رسمی هستند.' },
   { icon: Truck,       title: 'ارسال سریع',        desc: 'ارسال به سراسر ایران در کمترین زمان ممکن با پیک معتبر.' },
@@ -305,17 +291,21 @@ const WHY_ITEMS = [
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function HomePage() {
-  const [cms, setCms]         = useState<HomepageSettings | null>(null)
+  const [cms, setCms]           = useState<HomepageSettings | null>(null)
   const [featCats, setFeatCats] = useState<Category[]>([])
-  const [promos, setPromos]   = useState<PublicPromotion[]>([])
+  const [promos, setPromos]     = useState<PublicPromotion[]>([])
 
-  // Parallax for hero image
+  // Hero scroll-linked transforms
   const heroRef = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll({
     target: heroRef,
     offset: ['start start', 'end start'],
   })
-  const heroImgY = useTransform(scrollYProgress, [0, 1], ['0%', '14%'])
+  const prefersReducedMotion = useReducedMotion() ?? false
+  const imgScale    = useTransform(scrollYProgress, [0, 1], [1,    1.08])
+  const imgY        = useTransform(scrollYProgress, [0, 1], [0,   -40])
+  const textOpacity = useTransform(scrollYProgress, [0, 0.65], [1,  0.72])
+  const textY       = useTransform(scrollYProgress, [0, 1],    [0, -20])
 
   useEffect(() => {
     Promise.allSettled([
@@ -334,36 +324,39 @@ export default function HomePage() {
   const promoEnabled = !cms || cms.isPromoEnabled
   const aboutOk      = (!cms || cms.isAboutEnabled) && cms?.aboutTitle
 
+  const categoryList = featCatOk
+    ? featCats.slice(0, 5).map((cat, i) => {
+        const data = CATEGORY_CARDS.find(c => c.slug === cat.slug) ?? CATEGORY_CARDS[i % CATEGORY_CARDS.length]
+        return { ...data, id: cat.id, label: cat.name }
+      })
+    : CATEGORY_CARDS.map(c => ({ ...c, id: c.slug }))
+
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: C.bg }} dir="rtl">
       <Header />
 
-      <main className="flex-1">
+      <main className="flex-1 overflow-x-hidden">
 
-        {/* ══ GLOBAL SEARCH ══════════════════════════════════════════════════
-            Central entry point — immediately below nav, always visible on load.
-        */}
-        <section className="py-4 md:py-5" style={{ backgroundColor: C.bg }}>
+        {/* ══ SEARCH ════════════════════════════════════════════════════════════ */}
+        <section className="pt-4 pb-5 md:pt-5 md:pb-6" style={{ backgroundColor: C.bg }}>
           <div className="max-w-2xl mx-auto px-5 md:px-8">
             <motion.div
-              initial={{ opacity: 0, y: 14 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.12, ease: EASE_ENTER }}
+              transition={{ duration: 0.5, delay: 0.1, ease: EASE_ENTER }}
             >
               <PremiumSearchBar />
             </motion.div>
           </div>
         </section>
 
-        {/* ══ HERO ═══════════════════════════════════════════════════════════ */}
+        {/* ══ HERO ══════════════════════════════════════════════════════════════ */}
         {heroEnabled && (
-          <section
-            style={{ backgroundColor: C.bg, borderTop: `1px solid ${C.border}` }}
-          >
+          <section style={{ backgroundColor: C.bg }}>
             <div ref={heroRef} className="max-w-7xl mx-auto">
               <div className="flex flex-col md:grid md:grid-cols-2 md:min-h-[82vh]">
 
-                {/* Visual — parallax on scroll */}
+                {/* Image — scroll parallax */}
                 <motion.div
                   className="order-2 md:order-2 relative overflow-hidden min-h-55 md:min-h-0"
                   style={{ maxHeight: '85vh' }}
@@ -371,15 +364,21 @@ export default function HomePage() {
                   animate={{ opacity: 1 }}
                   transition={{ duration: 1.1, ease: EASE_ENTER }}
                 >
-                  <motion.div className="absolute inset-0" style={{ y: heroImgY }}>
+                  <motion.div
+                    className="absolute inset-0"
+                    style={prefersReducedMotion ? {} : { scale: imgScale, y: imgY }}
+                  >
                     <HeroEditorialSVG />
                   </motion.div>
                 </motion.div>
 
-                {/* Text column */}
-                <div
+                {/* Text */}
+                <motion.div
                   className="order-1 md:order-1 flex flex-col justify-center px-6 md:px-16 lg:px-20 py-10 md:py-24"
-                  style={{ backgroundColor: C.bg }}
+                  style={{
+                    backgroundColor: C.bg,
+                    ...(prefersReducedMotion ? {} : { opacity: textOpacity, y: textY }),
+                  }}
                 >
                   <motion.p
                     className="text-xs tracking-editorial mb-6"
@@ -449,160 +448,247 @@ export default function HomePage() {
                       دسته‌بندی‌ها
                     </CtaButton>
                   </motion.div>
-                </div>
+                </motion.div>
               </div>
             </div>
           </section>
         )}
 
-        {/* ══ CATEGORIES ═════════════════════════════════════════════════════ */}
-        <section
-          className="py-14 md:py-28"
-          style={{ backgroundColor: C.white, borderTop: `1px solid ${C.border}` }}
-        >
-          <div className="max-w-7xl mx-auto px-6 md:px-10">
-            <FadeIn className="flex items-end justify-between mb-8 md:mb-14">
-              <SectionHeading eyebrow="دسته‌بندی‌ها" title="مجموعه محصولات" />
+        {/* ══ BRAND PHILOSOPHY ══════════════════════════════════════════════════
+            Signature quote — very large type, maximal whitespace.
+            Inspired by Aesop / COS editorial language.
+        */}
+        <section className="py-28 md:py-48" style={{ backgroundColor: C.bg }}>
+          <FadeIn y={16} className="max-w-4xl mx-auto px-6 md:px-10 text-center">
+            {/* Rule */}
+            <motion.div
+              className="mx-auto mb-14 md:mb-20"
+              initial={{ width: 0 }}
+              whileInView={{ width: 44 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, ease: EASE_ENTER }}
+              style={{ height: 1, backgroundColor: C.border }}
+            />
+
+            <blockquote
+              className="font-light"
+              style={{
+                fontSize: 'clamp(2.1rem, 7vw, 5.5rem)',
+                color: C.dark,
+                letterSpacing: '-0.04em',
+                lineHeight: 1.08,
+              }}
+            >
+              مراقبت از خود،
+              <br />
+              <span style={{ color: C.muted, fontWeight: 300 }}>سرمایه‌گذاری</span>
+              <br />
+              در زندگی‌ست.
+            </blockquote>
+
+            <p
+              className="mt-10 md:mt-14 text-xs tracking-editorial"
+              style={{ color: C.muted }}
+            >
+              — داروخانه سبز
+            </p>
+
+            {/* Rule */}
+            <motion.div
+              className="mx-auto mt-14 md:mt-20"
+              initial={{ width: 0 }}
+              whileInView={{ width: 44 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 0.2, ease: EASE_ENTER }}
+              style={{ height: 1, backgroundColor: C.border }}
+            />
+          </FadeIn>
+        </section>
+
+        {/* ══ CATEGORIES ════════════════════════════════════════════════════════
+            Horizontal swipe on mobile — immersive, edge-to-edge.
+            5-column grid on desktop.
+        */}
+        <section className="pt-16 pb-20 md:pt-20 md:pb-28" style={{ backgroundColor: C.white }}>
+
+          {/* Heading — constrained */}
+          <div className="max-w-7xl mx-auto px-6 md:px-10 mb-8 md:mb-14">
+            <FadeIn className="flex items-end justify-between">
+              <div>
+                <p className="text-xs tracking-editorial mb-2.5" style={{ color: C.muted }}>دسته‌بندی‌ها</p>
+                <h2
+                  className="text-2xl md:text-3xl font-bold"
+                  style={{ color: C.dark, letterSpacing: '-0.025em', lineHeight: 1.15 }}
+                >
+                  مجموعه محصولات
+                </h2>
+              </div>
               <Link
                 href="/products"
-                className="flex items-center gap-1.5 text-sm"
+                className="hidden md:flex items-center gap-1.5 text-sm"
                 style={{ color: C.muted }}
               >
                 مشاهده همه
                 <ArrowLeft className="w-3.5 h-3.5" strokeWidth={1.5} />
               </Link>
             </FadeIn>
+          </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
-              {(featCatOk
-                ? featCats.slice(0, 5).map((cat, i) => {
-                    const data =
-                      CATEGORY_CARDS.find(c => c.slug === cat.slug) ??
-                      CATEGORY_CARDS[i % CATEGORY_CARDS.length]
-                    return <CategoryCard key={cat.id} {...data} label={cat.name} index={i} />
-                  })
-                : CATEGORY_CARDS.map((cat, i) => (
-                    <CategoryCard key={cat.slug} {...cat} index={i} />
-                  ))
-              )}
+          {/* Mobile — horizontal swipe strip, full-bleed */}
+          <div className="md:hidden scrollbar-hidden overflow-x-auto flex gap-3 px-6 pb-2">
+            {categoryList.map((cat, i) => (
+              <div key={cat.id} className="shrink-0 w-[44vw]">
+                <CategoryCard {...cat} index={i} />
+              </div>
+            ))}
+            {/* Trailing spacer so last card doesn't sit flush at edge */}
+            <div className="shrink-0 w-2" aria-hidden />
+          </div>
+
+          {/* Mobile — "see all" link below strip */}
+          <div className="md:hidden mt-6 px-6">
+            <Link
+              href="/products"
+              className="flex items-center gap-1.5 text-sm"
+              style={{ color: C.muted }}
+            >
+              مشاهده همه دسته‌بندی‌ها
+              <ArrowLeft className="w-3.5 h-3.5" strokeWidth={1.5} />
+            </Link>
+          </div>
+
+          {/* Desktop — 5-column grid, constrained */}
+          <div className="hidden md:block max-w-7xl mx-auto px-10">
+            <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {categoryList.map((cat, i) => (
+                <CategoryCard key={cat.id} {...cat} index={i} />
+              ))}
             </div>
           </div>
         </section>
 
-        {/* ══ ALL PRODUCTS CTA ═══════════════════════════════════════════════
-            Replaces the product grid — clean, editorial, conversion-focused.
+        {/* ══ ALL PRODUCTS CTA ══════════════════════════════════════════════════
+            Full-bleed dark strip — editorial, impactful.
+            Background creates a strong visual beat in the page rhythm.
         */}
-        <section
-          className="py-16 md:py-24"
-          style={{ backgroundColor: C.bg, borderTop: `1px solid ${C.border}` }}
-        >
-          <FadeIn className="max-w-xl mx-auto px-6 md:px-10 text-center">
-            <p className="text-xs tracking-editorial mb-4" style={{ color: C.green }}>
+        <section className="py-24 md:py-40" style={{ backgroundColor: C.ink }}>
+          <FadeIn y={14} className="max-w-2xl mx-auto px-6 md:px-10 text-center">
+            <p
+              className="text-xs tracking-editorial mb-8"
+              style={{ color: 'rgba(201,130,103,0.65)' }}
+            >
               کشف کنید
             </p>
             <h2
-              className="text-2xl md:text-3xl font-bold mb-4"
-              style={{ color: C.dark, letterSpacing: '-0.025em', lineHeight: 1.2 }}
+              className="font-light mb-6"
+              style={{
+                fontSize: 'clamp(2rem, 5.5vw, 4.5rem)',
+                color: '#F0EBE2',
+                letterSpacing: '-0.04em',
+                lineHeight: 1.08,
+              }}
             >
-              بیش از هزار محصول<br className="hidden sm:block" /> در انتظار شماست
+              بیش از هزار محصول<br />
+              <span style={{ fontWeight: 600 }}>در انتظار شماست</span>
             </h2>
             <p
-              className="text-sm md:text-base leading-relaxed mb-8"
-              style={{ color: C.muted }}
+              className="text-sm md:text-base leading-relaxed mb-12"
+              style={{ color: 'rgba(240,235,226,0.45)', maxWidth: '36ch', margin: '0 auto 3rem' }}
             >
-              از مراقبت پوست تا مکمل‌های تخصصی — همه با تضمین اصالت و ارسال سریع
+              از مراقبت پوست تا مکمل‌های تخصصی — همه با تضمین اصالت
             </p>
-            <CtaButton href="/products" variant="primary" fullWidthMobile>
+            <CtaButton href="/products" variant="ghost" fullWidthMobile>
               مشاهده همه محصولات
             </CtaButton>
           </FadeIn>
         </section>
 
-        {/* ══ BRAND STORY ════════════════════════════════════════════════════ */}
-        <section style={{ backgroundColor: C.white, borderTop: `1px solid ${C.border}` }}>
-          <div className="max-w-7xl mx-auto">
-            <div className="grid md:grid-cols-2">
+        {/* ══ BRAND STORY ═══════════════════════════════════════════════════════
+            Full-width layout — image fills its column edge-to-edge vertically.
+            Text column has generous internal padding; no outer max-width cap.
+        */}
+        <section className="overflow-hidden" style={{ backgroundColor: C.bg }}>
+          <div className="grid md:grid-cols-2">
 
-              {/* Text column */}
-              <FadeIn className="flex flex-col justify-center order-2 md:order-1 px-6 md:px-16 lg:px-20 py-10 md:py-28">
-                <div className="max-w-md space-y-7">
-                  <p className="text-xs tracking-editorial" style={{ color: C.green }}>
-                    داستان ما
-                  </p>
-                  <h2
-                    className="font-bold"
-                    style={{
-                      fontSize: 'clamp(1.75rem, 3vw, 2.75rem)',
-                      color: C.dark,
-                      letterSpacing: '-0.03em',
-                      lineHeight: 1.12,
-                    }}
-                  >
-                    کیفیت را از منبع<br />تضمین می‌کنیم
-                  </h2>
-                  <div style={{ height: 1, width: 40, backgroundColor: C.border }} />
-                  <p className="leading-relaxed" style={{ color: C.muted }}>
-                    داروخانه سبز با همکاری مستقیم با برندهای معتبر ایرانی و خارجی،
-                    محصولاتی را عرضه می‌کند که کیفیت آنها از مبدا تضمین شده است.
-                  </p>
-                  <p className="text-sm leading-relaxed" style={{ color: C.muted }}>
-                    هر محصول قبل از عرضه، تاییدیه اصالت دریافت می‌کند. ما به پیشنهاد
-                    متخصصین داروخانه اعتقاد داریم — نه فقط فروش.
-                  </p>
-                  <CtaButton href="/products" variant="outline">
-                    مشاهده محصولات
-                  </CtaButton>
-                </div>
-              </FadeIn>
+            {/* Text column */}
+            <FadeIn className="order-2 md:order-1 flex flex-col justify-center
+                               px-6 md:px-14 lg:px-20 py-16 md:py-36">
+              <div className="max-w-md mx-auto md:mx-0 space-y-8">
+                <p className="text-xs tracking-editorial" style={{ color: C.green }}>
+                  داستان ما
+                </p>
+                <h2
+                  className="font-bold"
+                  style={{
+                    fontSize: 'clamp(1.8rem, 3vw, 2.75rem)',
+                    color: C.dark,
+                    letterSpacing: '-0.03em',
+                    lineHeight: 1.1,
+                  }}
+                >
+                  کیفیت را از منبع<br />تضمین می‌کنیم
+                </h2>
+                <div style={{ height: 1, width: 36, backgroundColor: C.border }} />
+                <p className="leading-relaxed text-sm md:text-base" style={{ color: C.muted }}>
+                  داروخانه سبز با همکاری مستقیم با برندهای معتبر ایرانی و خارجی،
+                  محصولاتی را عرضه می‌کند که کیفیت آنها از مبدا تضمین شده است.
+                </p>
+                <p className="text-sm leading-relaxed" style={{ color: C.muted }}>
+                  هر محصول قبل از عرضه، تاییدیه اصالت دریافت می‌کند. ما به پیشنهاد
+                  متخصصین داروخانه اعتقاد داریم — نه فقط فروش.
+                </p>
+                <CtaButton href="/products" variant="outline">
+                  مشاهده محصولات
+                </CtaButton>
+              </div>
+            </FadeIn>
 
-              {/* Image column */}
-              <FadeIn
-                delay={0.15}
-                className="relative overflow-hidden order-1 md:order-2 min-h-65 md:min-h-120"
-              >
+            {/* Image column — fills full section height, no outer padding */}
+            <FadeIn
+              delay={0.18}
+              className="order-1 md:order-2 relative overflow-hidden min-h-72 md:min-h-0 md:self-stretch"
+            >
+              {/* Extend image beyond grid row for visual bleed */}
+              <div className="absolute inset-0 md:-inset-y-12">
                 <PharmacyStorySVG />
-              </FadeIn>
-            </div>
+              </div>
+            </FadeIn>
           </div>
         </section>
 
-        {/* ══ PROMOTIONAL BANNER ═════════════════════════════════════════════ */}
+        {/* ══ PROMO BANNER ══════════════════════════════════════════════════════
+            Floating dark card with generous breathing room around it.
+        */}
         {promoEnabled && (
-          <section
-            className="py-12 md:py-20"
-            style={{ backgroundColor: C.bg, borderTop: `1px solid ${C.border}` }}
-          >
+          <section className="py-16 md:py-28" style={{ backgroundColor: C.bg }}>
             <div className="max-w-7xl mx-auto px-6 md:px-10">
-              <FadeIn y={16}>
+              <FadeIn y={18}>
                 <div
                   className="grid md:grid-cols-2 overflow-hidden"
-                  style={{ backgroundColor: '#2A2320', borderRadius: 8 }}
+                  style={{
+                    backgroundColor: '#2A2320',
+                    borderRadius: 12,
+                    boxShadow: '0 24px 80px rgba(35,35,35,0.18)',
+                  }}
                 >
                   {/* Text */}
-                  <div
-                    className="flex flex-col justify-center order-2 md:order-1
-                               p-7 md:p-14 lg:p-16 space-y-5 md:space-y-7"
-                  >
+                  <div className="flex flex-col justify-center order-2 md:order-1
+                                 p-8 md:p-14 lg:p-16 space-y-5 md:space-y-7">
                     <p className="text-xs tracking-editorial" style={{ color: C.cta }}>
                       {promos[0]?.bannerText ?? 'پیشنهاد ویژه'}
                     </p>
                     <h2
                       className="font-bold text-white"
                       style={{
-                        fontSize: 'clamp(1.5rem, 3.5vw, 3rem)',
+                        fontSize: 'clamp(1.6rem, 3.5vw, 3rem)',
                         letterSpacing: '-0.03em',
                         lineHeight: 1.08,
                       }}
                     >
                       {promos[0]?.title ?? cms?.promoBannerTitle ?? 'پیشنهاد ویژه این هفته'}
                     </h2>
-                    <div
-                      style={{ height: 1, width: 40, backgroundColor: 'rgba(201,130,103,0.35)' }}
-                    />
-                    <p
-                      className="text-sm leading-relaxed"
-                      style={{ color: '#9A9088', maxWidth: '36ch' }}
-                    >
+                    <div style={{ height: 1, width: 36, backgroundColor: 'rgba(201,130,103,0.3)' }} />
+                    <p className="text-sm leading-relaxed" style={{ color: '#8A8078', maxWidth: '36ch' }}>
                       {promos[0]?.description ?? cms?.promoBannerSubtitle ??
                         'محصولات منتخب مراقبتی با قیمت ویژه برای مدت محدود.'}
                     </p>
@@ -617,15 +703,11 @@ export default function HomePage() {
                   </div>
 
                   {/* Visual */}
-                  <div
-                    className="relative overflow-hidden order-1 md:order-2 min-h-55 md:min-h-120"
-                  >
+                  <div className="relative overflow-hidden order-1 md:order-2 min-h-55 md:min-h-120">
                     <PromoBannerSVG />
                     <div
                       className="absolute inset-0 pointer-events-none"
-                      style={{
-                        background: 'linear-gradient(to right, transparent 45%, #2A2320 100%)',
-                      }}
+                      style={{ background: 'linear-gradient(to right, transparent 40%, #2A2320 100%)' }}
                     />
                   </div>
                 </div>
@@ -634,39 +716,63 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* ══ WHY CHOOSE US ══════════════════════════════════════════════════ */}
-        <section
-          className="py-14 md:py-28"
-          style={{ backgroundColor: C.bg2, borderTop: `1px solid ${C.border}` }}
-        >
-          <div className="max-w-7xl mx-auto px-6 md:px-10">
-            <FadeIn className="mb-10 md:mb-16">
-              <SectionHeading eyebrow="چرا داروخانه سبز" title="تجربه‌ای متفاوت در هر خرید" />
+        {/* ══ TRUST ═════════════════════════════════════════════════════════════
+            Minimal list layout — ordinal + icon + copy, lots of air.
+            No hairline grid, no boxes. Pure editorial.
+        */}
+        <section className="py-20 md:py-36" style={{ backgroundColor: C.bg2 }}>
+          <div className="max-w-3xl mx-auto px-6 md:px-10">
+
+            <FadeIn className="mb-16 md:mb-24">
+              <p className="text-xs tracking-editorial mb-3" style={{ color: C.muted }}>
+                چرا داروخانه سبز
+              </p>
+              <h2
+                className="text-2xl md:text-3xl font-bold"
+                style={{ color: C.dark, letterSpacing: '-0.025em', lineHeight: 1.15 }}
+              >
+                تجربه‌ای متفاوت<br />در هر خرید
+              </h2>
             </FadeIn>
 
-            {/* Hairline-grid layout — editorial technique */}
-            <div
-              className="grid grid-cols-2 lg:grid-cols-4"
-              style={{ gap: '1px', backgroundColor: C.border }}
-            >
+            <div>
               {WHY_ITEMS.map(({ icon: Icon, title, desc }, i) => (
-                <FadeIn key={title} delay={i * 0.08} y={14}>
+                <FadeIn key={title} delay={i * 0.07} y={10}>
                   <div
-                    className="flex flex-col gap-5 p-5 md:p-10"
-                    style={{ backgroundColor: C.bg2 }}
+                    className="flex items-start gap-6 py-7 md:py-10"
+                    style={{
+                      borderBottom: i < WHY_ITEMS.length - 1
+                        ? `1px solid ${C.border}`
+                        : 'none',
+                    }}
                   >
+                    {/* Ordinal */}
                     <span
-                      className="text-[11px] tracking-editorial"
-                      style={{ color: C.muted }}
+                      className="font-mono text-xs tracking-wider shrink-0 mt-0.5 select-none"
+                      style={{ color: C.muted, opacity: 0.45 }}
                     >
-                      ۰{i + 1}
+                      {String(i + 1).padStart(2, '0')}
                     </span>
-                    <Icon className="w-5 h-5" strokeWidth={1.4} style={{ color: C.green }} />
-                    <div className="space-y-2">
-                      <h3 className="font-bold text-sm leading-snug" style={{ color: C.dark }}>
+
+                    {/* Icon */}
+                    <Icon
+                      className="w-4 h-4 shrink-0 mt-0.5"
+                      strokeWidth={1.3}
+                      style={{ color: C.green }}
+                    />
+
+                    {/* Copy */}
+                    <div className="min-w-0">
+                      <h3
+                        className="font-semibold text-sm md:text-base mb-1.5"
+                        style={{ color: C.dark }}
+                      >
                         {title}
                       </h3>
-                      <p className="text-xs leading-relaxed" style={{ color: C.muted }}>
+                      <p
+                        className="text-xs md:text-sm leading-relaxed"
+                        style={{ color: C.muted }}
+                      >
                         {desc}
                       </p>
                     </div>
@@ -677,23 +783,20 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ══ ABOUT (CMS-driven) ═════════════════════════════════════════════ */}
+        {/* ══ ABOUT (CMS-driven) ════════════════════════════════════════════════ */}
         {aboutOk && (
-          <section
-            className="py-12 md:py-20"
-            style={{ backgroundColor: C.bg, borderTop: `1px solid ${C.border}` }}
-          >
-            <FadeIn className="max-w-2xl mx-auto px-6 md:px-10 text-center">
-              <p className="text-xs tracking-editorial mb-4" style={{ color: C.green }}>
+          <section className="py-16 md:py-28" style={{ backgroundColor: C.bg }}>
+            <FadeIn className="max-w-xl mx-auto px-6 md:px-10 text-center">
+              <p className="text-xs tracking-editorial mb-5" style={{ color: C.green }}>
                 درباره ما
               </p>
               <h2
-                className="text-xl md:text-2xl font-bold mb-5"
-                style={{ color: C.dark, letterSpacing: '-0.02em' }}
+                className="text-xl md:text-2xl font-bold mb-6"
+                style={{ color: C.dark, letterSpacing: '-0.02em', lineHeight: 1.25 }}
               >
                 {cms?.aboutTitle}
               </h2>
-              <p className="leading-relaxed text-sm" style={{ color: C.muted }}>
+              <p className="leading-relaxed text-sm md:text-base" style={{ color: C.muted }}>
                 {cms?.aboutDescription}
               </p>
             </FadeIn>

@@ -153,3 +153,12 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+
+/* Swipeable strip — hides scrollbar on all browsers */
+.scrollbar-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
