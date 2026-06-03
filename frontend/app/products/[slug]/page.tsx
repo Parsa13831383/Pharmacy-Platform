@@ -14,7 +14,7 @@ import { useCart } from '@/lib/cart-context'
 import type { PublicProduct, PublicProductImage } from '@/types/public-product'
 
 const C = {
-  bg:     '#F7F2E8',
+  bg:     '#FAFAF8',
   bg2:    '#EFE7DA',
   dark:   '#232323',
   muted:  '#6F6A61',
@@ -125,7 +125,7 @@ export default function ProductDetailPage() {
         ) : !product ? null : (
           <>
             {/* Product section */}
-            <section className="max-w-7xl mx-auto px-6 md:px-10 py-12 md:py-20">
+            <section className="max-w-7xl mx-auto px-6 md:px-10 py-6 md:py-20 pb-28 md:pb-20">
               <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-start">
 
                 {/* Image gallery */}
@@ -365,6 +365,39 @@ export default function ProductDetailPage() {
           </>
         )}
       </main>
+
+      {/* Sticky mobile add-to-cart bar */}
+      {product && !isOutOfStock && (
+        <div
+          className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3"
+          style={{ backgroundColor: C.white, borderTop: `1px solid ${C.border}` }}
+        >
+          <div className="min-w-0">
+            <p className="text-xs truncate" style={{ color: C.muted }}>{product.name}</p>
+            <p className="text-sm font-bold" style={{ color: C.dark }}>
+              {fmtPrice(product.discountedPrice ?? product.price)}
+            </p>
+          </div>
+          <button
+            onClick={handleAdd}
+            disabled={added}
+            className="flex items-center gap-2 px-5 py-3 text-sm font-medium text-white shrink-0"
+            style={{ backgroundColor: added ? C.green : C.cta, borderRadius: '3px' }}
+          >
+            {added ? (
+              <>
+                <CheckCircle className="w-4 h-4" strokeWidth={1.5} />
+                افزوده شد
+              </>
+            ) : (
+              <>
+                <ShoppingBag className="w-4 h-4" strokeWidth={1.5} />
+                افزودن به سبد
+              </>
+            )}
+          </button>
+        </div>
+      )}
 
       <Footer />
     </div>

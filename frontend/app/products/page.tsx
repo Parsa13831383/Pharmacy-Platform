@@ -11,7 +11,7 @@ import { getPublicProducts } from '@/lib/api'
 import type { PublicProduct, SortOption } from '@/types/public-product'
 
 const C = {
-  bg:     '#F7F2E8',
+  bg:     '#FAFAF8',
   bg2:    '#EFE7DA',
   dark:   '#232323',
   muted:  '#6F6A61',
@@ -154,7 +154,7 @@ function ProductsContent() {
       <main className="flex-1">
         {/* Page header */}
         <section
-          className="py-12 md:py-16"
+          className="py-6 md:py-16"
           style={{ backgroundColor: C.bg2, borderBottom: `1px solid ${C.border}` }}
         >
           <div className="max-w-7xl mx-auto px-6 md:px-10">
@@ -165,7 +165,7 @@ function ProductsContent() {
           </div>
         </section>
 
-        <div className="max-w-7xl mx-auto px-6 md:px-10 py-10">
+        <div className="max-w-7xl mx-auto px-6 md:px-10 py-6 md:py-10">
           <div className="flex flex-col lg:flex-row gap-10">
 
             {/* Desktop sidebar */}
@@ -190,7 +190,7 @@ function ProductsContent() {
                     placeholder="جستجوی محصولات..."
                     value={search}
                     onChange={e => handleSearchChange(e.target.value)}
-                    className="w-full pl-3 pr-9 py-2.5 text-sm bg-transparent outline-none"
+                    className="w-full pl-3 pr-9 py-3 text-sm bg-transparent outline-none"
                     style={{ color: C.dark }}
                   />
                 </div>
@@ -199,7 +199,7 @@ function ProductsContent() {
                   <select
                     value={sort}
                     onChange={e => handleSort(e.target.value as SortOption)}
-                    className="px-3 py-2.5 text-sm outline-none"
+                    className="px-3 py-3 text-sm outline-none"
                     style={{
                       border: `1px solid ${C.border}`,
                       borderRadius: '3px',
@@ -214,7 +214,7 @@ function ProductsContent() {
 
                   <button
                     onClick={() => setDrawerOpen(true)}
-                    className="lg:hidden flex items-center gap-1.5 px-4 py-2.5 text-sm border"
+                    className="lg:hidden flex items-center gap-1.5 px-4 py-3 text-sm border"
                     style={{ border: `1px solid ${C.border}`, borderRadius: '3px', color: C.dark, backgroundColor: C.white }}
                   >
                     <SlidersHorizontal className="w-4 h-4" strokeWidth={1.5} />
@@ -346,7 +346,7 @@ function ProductsContent() {
 export default function ProductsPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center" dir="rtl" style={{ backgroundColor: '#F7F2E8' }}>
+      <div className="min-h-screen flex items-center justify-center" dir="rtl" style={{ backgroundColor: '#FAFAF8' }}>
         <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#E5DED1', borderTopColor: '#232323' }} />
       </div>
     }>

@@ -150,10 +150,10 @@ export function PublicProductCard({ product, index = 0 }: Props) {
               </div>
             )}
 
-            {/* ── Add-to-cart reveal ───────────────────────────────────── */}
+            {/* ── Add-to-cart reveal (desktop hover) ──────────────────── */}
             {!isOutOfStock && (
               <motion.button
-                className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 py-3.5 text-sm font-medium text-white z-10"
+                className="hidden md:flex absolute inset-x-0 bottom-0 items-center justify-center gap-2 py-3.5 text-sm font-medium text-white z-10"
                 style={{ backgroundColor: '#232323', pointerEvents: hovered ? 'auto' : 'none' }}
                 animate={{ y: hovered ? 0 : 8, opacity: hovered ? 1 : 0 }}
                 transition={{ duration: 0.3, ease: EASE_SMOOTH }}
@@ -165,6 +165,18 @@ export function PublicProductCard({ product, index = 0 }: Props) {
                 <ShoppingBag className="w-3.5 h-3.5" strokeWidth={1.5} />
                 افزودن به سبد
               </motion.button>
+            )}
+
+            {/* ── Mobile always-visible add button ────────────────────── */}
+            {!isOutOfStock && (
+              <button
+                className="md:hidden absolute inset-x-0 bottom-0 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-white z-10"
+                style={{ backgroundColor: '#232323' }}
+                onClick={handleAdd}
+              >
+                <ShoppingBag className="w-3 h-3" strokeWidth={1.5} />
+                افزودن
+              </button>
             )}
           </div>
 

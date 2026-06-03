@@ -4,11 +4,11 @@ import { Mail, MapPin, Phone } from 'lucide-react'
 export function Footer() {
   return (
     <footer style={{ backgroundColor: '#EFE7DA', borderTop: '1px solid #E5DED1' }}>
-      <div className="max-w-7xl mx-auto px-6 md:px-10 py-16 md:py-20">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-16">
+      <div className="max-w-7xl mx-auto px-6 md:px-10 py-10 md:py-20">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-16">
 
           {/* Brand */}
-          <div className="space-y-4 lg:col-span-1">
+          <div className="space-y-4 col-span-2 md:col-span-1 lg:col-span-1">
             <Link href="/" className="inline-block">
               <span className="font-bold text-lg" style={{ color: '#232323', letterSpacing: '-0.02em' }}>
                 داروخانه سبز
@@ -34,7 +34,7 @@ export function Footer() {
             <h4 className="text-xs tracking-editorial font-medium" style={{ color: '#232323' }}>
               محصولات
             </h4>
-            <nav className="flex flex-col gap-2.5">
+            <nav className="flex flex-col gap-0">
               {[
                 { href: '/products', label: 'همه محصولات' },
                 { href: '/products?category=skincare', label: 'مراقبت پوست' },
@@ -45,7 +45,7 @@ export function Footer() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="text-sm transition-colors"
+                  className="py-2.5 text-sm transition-colors"
                   style={{ color: '#6F6A61' }}
                 >
                   {link.label}
@@ -59,7 +59,7 @@ export function Footer() {
             <h4 className="text-xs tracking-editorial font-medium" style={{ color: '#232323' }}>
               خدمات مشتریان
             </h4>
-            <nav className="flex flex-col gap-2.5">
+            <nav className="flex flex-col gap-0">
               {[
                 { href: '/track-order', label: 'پیگیری سفارش' },
                 { href: '#', label: 'شرایط بازگشت کالا' },
@@ -69,7 +69,7 @@ export function Footer() {
                 <Link
                   key={link.label}
                   href={link.href}
-                  className="text-sm transition-colors"
+                  className="py-2.5 text-sm transition-colors"
                   style={{ color: '#6F6A61' }}
                 >
                   {link.label}
@@ -102,7 +102,7 @@ export function Footer() {
 
         {/* Bottom bar */}
         <div
-          className="mt-16 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4"
+          className="mt-8 md:mt-16 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4"
           style={{ borderTop: '1px solid #E5DED1' }}
         >
           <p className="text-xs" style={{ color: '#6F6A61' }}>

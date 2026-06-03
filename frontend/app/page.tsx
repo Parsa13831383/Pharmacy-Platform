@@ -35,7 +35,7 @@ const EASE_ENTER  = [0.16, 1,   0.3,  1] as const
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
-  bg:     '#F7F2E8',
+  bg:     '#FAFAF8',
   bg2:    '#EFE7DA',
   bg3:    '#E8E2D5',
   dark:   '#232323',
@@ -249,12 +249,12 @@ export default function HomePage() {
         {heroEnabled && (
           <section style={{ backgroundColor: C.bg, overflow: 'hidden' }}>
             <div className="max-w-7xl mx-auto">
-              <div className="flex flex-col md:grid md:grid-cols-2" style={{ minHeight: '88vh' }}>
+              <div className="flex flex-col md:grid md:grid-cols-2 md:min-h-[88vh]">
 
                 {/* Visual — editorial SVG + optional real product overlay */}
                 <motion.div
-                  className="order-1 md:order-2 relative overflow-hidden"
-                  style={{ minHeight: '52vw', maxHeight: '90vh' }}
+                  className="order-2 md:order-2 relative overflow-hidden min-h-[55vw] md:min-h-0"
+                  style={{ maxHeight: '90vh' }}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 1.2, ease: EASE_ENTER }}
@@ -290,7 +290,7 @@ export default function HomePage() {
 
                 {/* Text column */}
                 <div
-                  className="order-2 md:order-1 flex flex-col justify-center px-8 md:px-16 lg:px-20 py-14 md:py-24"
+                  className="order-1 md:order-1 flex flex-col justify-center px-6 md:px-16 lg:px-20 py-10 md:py-24"
                   style={{ backgroundColor: C.bg }}
                 >
                   <motion.p className="text-xs tracking-editorial mb-7" style={{ color: C.green }}
@@ -355,13 +355,13 @@ export default function HomePage() {
         )}
 
         {/* ══ CATEGORIES — full editorial SVG cards ══════════════════════════ */}
-        <section className="py-20 md:py-28"
+        <section className="py-10 md:py-28"
           style={{ backgroundColor: C.white, borderTop: `1px solid ${C.border}` }}>
           <div className="max-w-7xl mx-auto px-6 md:px-10">
-            <FadeIn className="flex items-end justify-between mb-12 md:mb-16">
+            <FadeIn className="flex items-end justify-between mb-6 md:mb-16">
               <SectionHeading eyebrow="دسته‌بندی‌ها" title="مجموعه محصولات" />
               <Link href="/products"
-                className="hidden sm:flex items-center gap-1.5 text-sm" style={{ color: C.muted }}>
+                className="flex items-center gap-1.5 text-sm" style={{ color: C.muted }}>
                 مشاهده همه
                 <ArrowLeft className="w-3.5 h-3.5" strokeWidth={1.5} />
               </Link>
@@ -381,16 +381,16 @@ export default function HomePage() {
 
         {/* ══ FEATURED PRODUCTS ══════════════════════════════════════════════ */}
         {(featProdOk || (!loading && latest.length > 0)) && (
-          <section className="py-20 md:py-28"
+          <section className="py-10 md:py-28"
             style={{ backgroundColor: C.bg, borderTop: `1px solid ${C.border}` }}>
             <div className="max-w-7xl mx-auto px-6 md:px-10">
-              <FadeIn className="flex items-end justify-between mb-12 md:mb-16">
+              <FadeIn className="flex items-end justify-between mb-6 md:mb-16">
                 <SectionHeading
                   eyebrow={featProdOk ? 'انتخاب سردبیر' : 'تازه‌ترین اضافه‌ها'}
                   title={featProdOk ? 'محصولات منتخب' : 'جدیدترین محصولات'}
                 />
                 <Link href="/products"
-                  className="hidden sm:flex items-center gap-1.5 text-sm" style={{ color: C.muted }}>
+                  className="flex items-center gap-1.5 text-sm" style={{ color: C.muted }}>
                   مشاهده همه
                   <ArrowLeft className="w-3.5 h-3.5" strokeWidth={1.5} />
                 </Link>
@@ -420,12 +420,12 @@ export default function HomePage() {
         )}
 
         {/* ══ WHY CHOOSE US — editorial feature grid ═════════════════════════ */}
-        <section className="py-24 md:py-32"
+        <section className="py-10 md:py-32"
           style={{ backgroundColor: C.bg2, borderTop: `1px solid ${C.border}` }}>
           <div className="max-w-7xl mx-auto px-6 md:px-10">
 
             {/* Header — RTL-native right-aligned, NOT centred */}
-            <FadeIn className="mb-14 md:mb-20">
+            <FadeIn className="mb-8 md:mb-20">
               <SectionHeading eyebrow="چرا داروخانه سبز" title="تجربه‌ای متفاوت در هر خرید" />
             </FadeIn>
 
@@ -434,13 +434,13 @@ export default function HomePage() {
               between cells — a premium editorial technique (FT, Monocle, etc.)
             */}
             <div
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
+              className="grid grid-cols-2 lg:grid-cols-4"
               style={{ gap: '1px', backgroundColor: C.border }}
             >
               {WHY_ITEMS.map(({ icon: Icon, title, desc }, i) => (
                 <FadeIn key={title} delay={i * 0.09} y={14}>
                   <div
-                    className="flex flex-col gap-7 p-8 md:p-10"
+                    className="flex flex-col gap-5 p-5 md:p-10"
                     style={{ backgroundColor: C.bg2 }}
                   >
                     {/* Ordinal number — Persian digits */}
@@ -501,7 +501,7 @@ export default function HomePage() {
 
               {/* TEXT column */}
               <FadeIn className="flex flex-col justify-center order-2 md:order-1
-                                 px-8 md:px-16 lg:px-20 py-16 md:py-24">
+                                 px-6 md:px-16 lg:px-20 py-8 md:py-24">
                 <div className="max-w-md space-y-8">
                   <p
                     className="text-xs tracking-editorial"
@@ -544,8 +544,7 @@ export default function HomePage() {
               */}
               <FadeIn
                 delay={0.15}
-                className="relative overflow-hidden order-1 md:order-2"
-                style={{ minHeight: 480 }}
+                className="relative overflow-hidden order-1 md:order-2 min-h-65 md:min-h-120"
               >
                 <PharmacyStorySVG />
               </FadeIn>
@@ -555,7 +554,7 @@ export default function HomePage() {
 
         {/* ══ PROMOTIONAL BANNER — dark editorial ════════════════════════════ */}
         {promoEnabled && (
-          <section className="py-20 md:py-28"
+          <section className="py-10 md:py-28"
             style={{ backgroundColor: C.bg, borderTop: `1px solid ${C.border}` }}>
             <div className="max-w-7xl mx-auto px-6 md:px-10">
               <FadeIn y={16}>
@@ -571,7 +570,7 @@ export default function HomePage() {
                   {/* TEXT column — RIGHT on desktop, BELOW image on mobile */}
                   <div
                     className="flex flex-col justify-center order-2 md:order-1
-                               p-10 md:p-14 lg:p-16 space-y-7"
+                               p-6 md:p-14 lg:p-16 space-y-5 md:space-y-7"
                   >
                     <p
                       className="text-xs tracking-editorial"
@@ -621,8 +620,7 @@ export default function HomePage() {
                     CSS gradient directions use physical axes.
                   */}
                   <div
-                    className="relative overflow-hidden order-1 md:order-2"
-                    style={{ minHeight: 480 }}
+                    className="relative overflow-hidden order-1 md:order-2 min-h-55 md:min-h-120"
                   >
                     <PromoBannerSVG />
                     <div
@@ -641,13 +639,13 @@ export default function HomePage() {
 
         {/* ══ LATEST PRODUCTS ════════════════════════════════════════════════ */}
         {latest.length > 0 && (
-          <section className="py-20 md:py-28"
+          <section className="py-10 md:py-28"
             style={{ backgroundColor: C.bg2, borderTop: `1px solid ${C.border}` }}>
             <div className="max-w-7xl mx-auto px-6 md:px-10">
-              <FadeIn className="flex items-end justify-between mb-12 md:mb-16">
+              <FadeIn className="flex items-end justify-between mb-6 md:mb-16">
                 <SectionHeading eyebrow="تازه‌ترین اضافه‌ها" title="جدیدترین محصولات" />
                 <Link href="/products?sort=newest"
-                  className="hidden sm:flex items-center gap-1.5 text-sm" style={{ color: C.muted }}>
+                  className="flex items-center gap-1.5 text-sm" style={{ color: C.muted }}>
                   مشاهده همه
                   <ArrowLeft className="w-3.5 h-3.5" strokeWidth={1.5} />
                 </Link>
@@ -671,7 +669,7 @@ export default function HomePage() {
         )}
 
         {/* ══ BRAND PHILOSOPHY ═══════════════════════════════════════════════ */}
-        <section className="py-24 md:py-32"
+        <section className="py-10 md:py-32"
           style={{ backgroundColor: C.white, borderTop: `1px solid ${C.border}` }}>
           <FadeIn y={12} className="max-w-3xl mx-auto px-6 md:px-10 text-center">
             <motion.div className="mx-auto mb-12"
@@ -694,7 +692,7 @@ export default function HomePage() {
 
         {/* ══ ABOUT (CMS-driven) ═════════════════════════════════════════════ */}
         {aboutOk && (
-          <section className="py-20"
+          <section className="py-10"
             style={{ backgroundColor: C.bg, borderTop: `1px solid ${C.border}` }}>
             <FadeIn className="max-w-2xl mx-auto px-6 md:px-10 text-center">
               <p className="text-xs tracking-editorial mb-4" style={{ color: C.green }}>درباره ما</p>

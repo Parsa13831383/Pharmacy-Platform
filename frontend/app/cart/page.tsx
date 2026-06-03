@@ -9,7 +9,7 @@ import { useCart } from '@/lib/cart-context'
 import { getMediaUrl } from '@/lib/media'
 
 const C = {
-  bg:     '#F7F2E8',
+  bg:     '#FAFAF8',
   bg2:    '#EFE7DA',
   dark:   '#232323',
   muted:  '#6F6A61',
@@ -57,7 +57,7 @@ export default function CartPage() {
           </div>
         </div>
 
-        <section className="py-10 md:py-14">
+        <section className="py-10 md:py-14 pb-28 lg:pb-14">
           <div className="max-w-7xl mx-auto px-6 md:px-10">
             {items.length === 0 ? (
               <motion.div
@@ -153,21 +153,21 @@ export default function CartPage() {
                               >
                                 <button
                                   onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                  className="w-8 h-8 flex items-center justify-center transition-colors"
+                                  className="w-10 h-10 flex items-center justify-center transition-colors"
                                   style={{ color: C.dark, borderLeft: `1px solid ${C.border}` }}
                                 >
-                                  <Minus className="w-3 h-3" strokeWidth={1.5} />
+                                  <Minus className="w-3.5 h-3.5" strokeWidth={1.5} />
                                 </button>
-                                <span className="w-9 text-center text-sm font-medium tabular-nums" style={{ color: C.dark }}>
+                                <span className="w-10 text-center text-sm font-medium tabular-nums" style={{ color: C.dark }}>
                                   {item.quantity.toLocaleString('fa-IR')}
                                 </span>
                                 <button
                                   onClick={() => updateQuantity(item.id, item.quantity + 1)}
                                   disabled={item.quantity >= item.stock}
-                                  className="w-8 h-8 flex items-center justify-center transition-colors disabled:opacity-30"
+                                  className="w-10 h-10 flex items-center justify-center transition-colors disabled:opacity-30"
                                   style={{ color: C.dark, borderRight: `1px solid ${C.border}` }}
                                 >
-                                  <Plus className="w-3 h-3" strokeWidth={1.5} />
+                                  <Plus className="w-3.5 h-3.5" strokeWidth={1.5} />
                                 </button>
                               </div>
 
@@ -257,6 +257,28 @@ export default function CartPage() {
           </div>
         </section>
       </main>
+
+      {/* Sticky mobile checkout bar */}
+      {items.length > 0 && (
+        <div
+          className="lg:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3"
+          style={{ backgroundColor: C.white, borderTop: `1px solid ${C.border}` }}
+        >
+          <div>
+            <p className="text-xs" style={{ color: C.muted }}>جمع کل</p>
+            <p className="text-base font-bold" style={{ color: C.dark }}>{fmtPrice(finalTotal)}</p>
+          </div>
+          <Link href="/checkout">
+            <button
+              className="flex items-center gap-2 px-6 py-3 text-sm font-medium text-white"
+              style={{ backgroundColor: C.cta, borderRadius: '3px' }}
+            >
+              ادامه ثبت سفارش
+              <ArrowLeft className="w-4 h-4" strokeWidth={1.5} />
+            </button>
+          </Link>
+        </div>
+      )}
 
       <Footer />
     </div>

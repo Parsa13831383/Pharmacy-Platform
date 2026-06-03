@@ -65,25 +65,25 @@ export function Header() {
             </nav>
 
             {/* Actions */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
               {/* Search */}
               <button
                 onClick={() => setSearchOpen(true)}
-                className="w-9 h-9 flex items-center justify-center rounded-full transition-colors"
+                className="w-11 h-11 flex items-center justify-center rounded-full transition-colors"
                 style={{ color: '#6F6A61' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#232323' }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#6F6A61' }}
                 aria-label="جستجو"
               >
-                <Search className="w-4 h-4" strokeWidth={1.5} />
+                <Search className="w-5 h-5" strokeWidth={1.5} />
               </button>
 
               {/* Cart */}
-              <Link href="/cart" className="relative w-9 h-9 flex items-center justify-center rounded-full transition-colors" style={{ color: '#6F6A61' }}>
-                <ShoppingBag className="w-4 h-4" strokeWidth={1.5} />
+              <Link href="/cart" className="relative w-11 h-11 flex items-center justify-center rounded-full transition-colors" style={{ color: '#6F6A61' }}>
+                <ShoppingBag className="w-5 h-5" strokeWidth={1.5} />
                 {totalItems > 0 && (
                   <span
-                    className="absolute -top-0.5 -right-0.5 w-4 h-4 flex items-center justify-center text-[10px] font-bold rounded-full text-white"
+                    className="absolute top-1 right-1 w-4 h-4 flex items-center justify-center text-[10px] font-bold rounded-full text-white"
                     style={{ backgroundColor: '#C98267' }}
                   >
                     {totalItems}
@@ -94,11 +94,11 @@ export function Header() {
               {/* Mobile menu toggle */}
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
-                className="md:hidden w-9 h-9 flex items-center justify-center rounded-full"
+                className="md:hidden w-11 h-11 flex items-center justify-center rounded-full"
                 style={{ color: '#6F6A61' }}
                 aria-label="منو"
               >
-                {menuOpen ? <X className="w-4 h-4" strokeWidth={1.5} /> : <Menu className="w-4 h-4" strokeWidth={1.5} />}
+                {menuOpen ? <X className="w-5 h-5" strokeWidth={1.5} /> : <Menu className="w-5 h-5" strokeWidth={1.5} />}
               </button>
             </div>
           </div>
@@ -114,13 +114,13 @@ export function Header() {
               className="md:hidden overflow-hidden bg-background"
               style={{ borderTop: '1px solid #E5DED1' }}
             >
-              <nav className="flex flex-col max-w-7xl mx-auto px-6 py-4 gap-1">
+              <nav className="flex flex-col max-w-7xl mx-auto px-4 py-2 gap-0">
                 {NAV_LINKS.map(link => (
                   <Link
                     key={link.href}
                     href={link.href}
-                    className="py-3 px-2 text-sm transition-colors"
-                    style={{ color: '#6F6A61', borderBottom: '1px solid #F0EBE2' }}
+                    className="py-4 px-4 text-base font-medium transition-colors"
+                    style={{ color: '#232323', borderBottom: '1px solid #F0EBE2' }}
                     onClick={() => setMenuOpen(false)}
                   >
                     {link.label}
