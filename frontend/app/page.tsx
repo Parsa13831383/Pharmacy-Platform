@@ -17,6 +17,7 @@ import {
   HygieneSVG,
   FragranceSVG,
 } from '@/components/public/brand-visuals'
+import { BotanicalPhilosophyLayer } from '@/components/public/botanical-philosophy'
 import {
   getFeaturedCategories,
   getHomepageSettings,
@@ -456,11 +457,19 @@ export default function HomePage() {
 
         {/* ══ BRAND PHILOSOPHY ══════════════════════════════════════════════════
             Signature quote — very large type, maximal whitespace.
-            Inspired by Aesop / COS editorial language.
+            Botanical layer lives in the surrounding negative space at low opacity
+            so it supports the typography without competing with it.
         */}
-        <section className="py-28 md:py-48" style={{ backgroundColor: C.bg }}>
-          <FadeIn y={16} className="max-w-4xl mx-auto px-6 md:px-10 text-center">
-            {/* Rule */}
+        <section
+          className="relative py-28 md:py-48 overflow-hidden"
+          style={{ backgroundColor: C.bg }}
+        >
+          {/* Animated botanical environment — absolute, aria-hidden, z-0 */}
+          <BotanicalPhilosophyLayer />
+
+          {/* Quote — above botanical layer */}
+          <FadeIn y={16} className="relative z-10 max-w-4xl mx-auto px-6 md:px-10 text-center">
+            {/* Top rule */}
             <motion.div
               className="mx-auto mb-14 md:mb-20"
               initial={{ width: 0 }}
@@ -493,7 +502,7 @@ export default function HomePage() {
               — داروخانه سبز
             </p>
 
-            {/* Rule */}
+            {/* Bottom rule */}
             <motion.div
               className="mx-auto mt-14 md:mt-20"
               initial={{ width: 0 }}
