@@ -50,6 +50,8 @@ export interface CartItem {
   categoryName: string | null
   quantity: number
   stock: number
+  /** Primary image URL (stored imageUrl value — resolved via getMediaUrl before rendering) */
+  imageUrl: string | null
 }
 
 export type SortOption = 'newest' | 'price_asc' | 'price_desc'

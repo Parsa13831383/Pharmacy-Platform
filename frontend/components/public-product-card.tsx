@@ -89,32 +89,36 @@ export function PublicProductCard({ product, index = 0 }: Props) {
             className="relative overflow-hidden mb-4"
             style={{ aspectRatio: '3/4', borderRadius: 3 }}
           >
-            {/* ── Image zoom ──────────────────────────────────────────── */}
-            <motion.div
-              className="absolute inset-0"
-              animate={{ scale: hovered ? 1.06 : 1 }}
-              transition={{ duration: 0.75, ease: EASE_SMOOTH }}
+            {/* ── Placeholder — always rendered; visible when no image or on load error ── */}
+            <div
+              className="absolute inset-0 flex items-center justify-center"
+              style={{ background: placeholderGradient(product.category?.slug) }}
             >
-              {primaryImg ? (
+              <motion.div
+                className="rounded-full"
+                style={{ width: 48, height: 48, backgroundColor: '#6F6A61' }}
+                animate={{ opacity: hovered ? 0.2 : 0.12, scale: hovered ? 1.06 : 1 }}
+                transition={{ duration: 0.5, ease: EASE_SMOOTH }}
+              />
+            </div>
+
+            {/* ── Product image — overlays placeholder; hides itself on error ── */}
+            {primaryImg && (
+              <motion.div
+                className="absolute inset-0"
+                animate={{ scale: hovered ? 1.06 : 1 }}
+                transition={{ duration: 0.75, ease: EASE_SMOOTH }}
+              >
                 <img
                   src={getMediaUrl(primaryImg.imageUrl)}
                   alt={primaryImg.altText ?? product.name}
                   className="w-full h-full object-cover"
+                  onError={e => {
+                    (e.currentTarget as HTMLImageElement).style.display = 'none'
+                  }}
                 />
-              ) : (
-                <div
-                  className="w-full h-full flex items-center justify-center"
-                  style={{ background: placeholderGradient(product.category?.slug) }}
-                >
-                  <motion.div
-                    className="rounded-full"
-                    style={{ width: 56, height: 56, backgroundColor: '#6F6A61' }}
-                    animate={{ opacity: hovered ? 0.25 : 0.15, scale: hovered ? 1.08 : 1 }}
-                    transition={{ duration: 0.5, ease: EASE_SMOOTH }}
-                  />
-                </div>
-              )}
-            </motion.div>
+              </motion.div>
+            )}
 
             {/* ── Subtle dark overlay on hover ────────────────────────── */}
             <motion.div

@@ -30,6 +30,8 @@ function cartItemFromProduct(product: PublicProduct, quantity: number): CartItem
   const effectivePrice = product.discountedPrice
     ? Number(product.discountedPrice)
     : Number(product.price)
+  const primaryImg =
+    product.images?.find(img => img.isPrimary) ?? product.images?.[0] ?? null
   return {
     id: product.id,
     slug: product.slug,
@@ -40,6 +42,7 @@ function cartItemFromProduct(product: PublicProduct, quantity: number): CartItem
     categoryName: product.category?.name ?? null,
     quantity,
     stock: product.stockQuantity,
+    imageUrl: primaryImg?.imageUrl ?? null,
   }
 }
 

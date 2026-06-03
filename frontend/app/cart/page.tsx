@@ -89,9 +89,7 @@ export default function CartPage() {
                 {/* Cart items */}
                 <div className="lg:col-span-2 space-y-3">
                   <AnimatePresence initial={false}>
-                    {items.map(item => {
-                      const hasImage = 'imageUrl' in item && item.imageUrl
-                      return (
+                    {items.map(item => (
                         <motion.div
                           key={item.id}
                           initial={{ opacity: 0, y: 10 }}
@@ -101,19 +99,22 @@ export default function CartPage() {
                           className="flex gap-4 p-4 md:p-5"
                           style={{ backgroundColor: C.white, border: `1px solid ${C.border}`, borderRadius: '4px' }}
                         >
-                          {/* Thumbnail */}
+                          {/* Thumbnail — placeholder always visible; image overlays on success */}
                           <Link
                             href={`/products/${item.slug}`}
-                            className="shrink-0 w-20 h-24 overflow-hidden"
+                            className="shrink-0 w-20 h-24 overflow-hidden relative"
                             style={{ borderRadius: '3px', background: 'linear-gradient(160deg, #D9CFC4 0%, #C8BFB2 100%)' }}
                           >
-                            {hasImage ? (
+                            {item.imageUrl && (
                               <img
-                                src={getMediaUrl((item as typeof item & { imageUrl: string }).imageUrl)}
+                                src={getMediaUrl(item.imageUrl)}
                                 alt={item.name}
-                                className="w-full h-full object-cover"
+                                className="absolute inset-0 w-full h-full object-cover"
+                                onError={e => {
+                                  (e.currentTarget as HTMLImageElement).style.display = 'none'
+                                }}
                               />
-                            ) : null}
+                            )}
                           </Link>
 
                           {/* Details */}
@@ -190,8 +191,7 @@ export default function CartPage() {
                             </div>
                           </div>
                         </motion.div>
-                      )
-                    })}
+                    ))}
                   </AnimatePresence>
                 </div>
 

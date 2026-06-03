@@ -140,24 +140,35 @@ export default function ProductDetailPage() {
                     className="relative overflow-hidden"
                     style={{
                       aspectRatio: '4/5',
-                      background: selectedImg ? '#F7F2E8' : placeholderGradient(product.category?.slug),
+                      background: placeholderGradient(product.category?.slug),
                       borderRadius: '4px',
                     }}
                   >
-                    {selectedImg ? (
+                    {/* Placeholder — always present; visible when no image or on error */}
+                    <div
+                      className="absolute inset-0 flex items-center justify-center"
+                      style={{ background: placeholderGradient(product.category?.slug) }}
+                    >
+                      <div
+                        className="w-20 h-20 rounded-full opacity-15"
+                        style={{ backgroundColor: C.muted }}
+                      />
+                    </div>
+
+                    {selectedImg && (
                       <img
                         src={getMediaUrl(selectedImg.imageUrl)}
                         alt={selectedImg.altText ?? product.name}
-                        className="w-full h-full object-cover"
+                        className="absolute inset-0 w-full h-full object-cover"
+                        onError={e => {
+                          (e.currentTarget as HTMLImageElement).style.display = 'none'
+                        }}
                       />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center" style={{ background: placeholderGradient(product.category?.slug) }}>
-                        <div className="w-24 h-24 rounded-full opacity-20" style={{ backgroundColor: C.muted }} />
-                      </div>
                     )}
+
                     {hasDiscount && (
                       <span
-                        className="absolute top-4 right-4 text-xs px-2.5 py-1 font-medium text-white"
+                        className="absolute top-4 right-4 text-xs px-2.5 py-1 font-medium text-white z-10"
                         style={{ backgroundColor: C.cta, borderRadius: '2px' }}
                       >
                         تخفیف
@@ -172,14 +183,22 @@ export default function ProductDetailPage() {
                         <button
                           key={img.id}
                           onClick={() => setSelectedImg(img)}
-                          className="shrink-0 w-16 h-16 overflow-hidden transition-all"
+                          className="shrink-0 w-16 h-16 overflow-hidden transition-all relative"
                           style={{
                             borderRadius: '3px',
+                            background: placeholderGradient(product.category?.slug),
                             outline: selectedImg?.id === img.id ? `2px solid ${C.dark}` : `1px solid ${C.border}`,
                             outlineOffset: selectedImg?.id === img.id ? '2px' : '0',
                           }}
                         >
-                          <img src={getMediaUrl(img.imageUrl)} alt="" className="w-full h-full object-cover" />
+                          <img
+                            src={getMediaUrl(img.imageUrl)}
+                            alt=""
+                            className="w-full h-full object-cover"
+                            onError={e => {
+                              (e.currentTarget as HTMLImageElement).style.display = 'none'
+                            }}
+                          />
                         </button>
                       ))}
                     </div>
