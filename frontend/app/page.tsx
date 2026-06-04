@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useInView, useReducedMotion, useScroll, useTransform } from 'framer-motion'
@@ -17,7 +18,6 @@ import {
   HygieneSVG,
   FragranceSVG,
 } from '@/components/public/brand-visuals'
-import { ProductMoleculesLayer } from '@/components/public/product-molecules'
 import {
   getFeaturedCategories,
   getHomepageSettings,
@@ -28,8 +28,10 @@ import type { Category } from '@/types/category'
 import type { PublicPromotion } from '@/types/promotion'
 
 // ─── Animation constants ──────────────────────────────────────────────────────
-const EASE_SMOOTH = [0.25, 0.1, 0.25, 1] as const
-const EASE_ENTER  = [0.16, 1,   0.3,  1] as const
+const EASE_SMOOTH   = [0.25, 0.1, 0.25, 1] as const
+const EASE_ENTER    = [0.16, 1,   0.3,  1] as const
+// Silky bezier for kinetic typography — slow start, decisive arrival
+const EASE_KINETIC  = [0.25, 1,   0.5,  1] as const
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
@@ -282,6 +284,190 @@ function CategoryCard({
   )
 }
 
+// ─── Kinetic quote ────────────────────────────────────────────────────────────
+// Each entry: the line text + any style overrides applied to the inner motion.span
+const HERO_QUOTE_LINES: { text: string; style: React.CSSProperties }[] = [
+  { text: 'مراقبت از خود،', style: {} },
+  { text: 'سرمایه‌گذاری',   style: { color: C.muted, fontWeight: 300 } },
+  { text: 'در زندگی‌ست.',  style: {} },
+]
+
+function KineticQuote() {
+  const ref    = useRef<HTMLQuoteElement>(null)
+  // Trigger once when 80px of the element enters the viewport
+  const inView = useInView(ref, { once: true, margin: '-100px' })
+  const noAnim = useReducedMotion() ?? false
+
+  return (
+    <blockquote
+      ref={ref}
+      dir="rtl"
+      className="font-light"
+      style={{
+        fontSize:      'clamp(2.1rem, 7vw, 5.5rem)',
+        color:         C.dark,
+        letterSpacing: '-0.04em',
+        lineHeight:    1.15,   // Slightly looser than 1.08 — gives clip box room for Arabic descenders
+      }}
+    >
+      {HERO_QUOTE_LINES.map(({ text, style }, i) => (
+        // Outer span = clipping mask. overflow:hidden hides the child until it rises into view.
+        // paddingBottom gives breathing room so Arabic tails (ی، ق...) are never cut off.
+        <span
+          key={i}
+          style={{
+            display:       'block',
+            overflow:      'hidden',
+            paddingBottom: '0.12em',
+          }}
+        >
+          {/*
+           * motion.span rises from y:'100%' (one full line-height below the clip boundary)
+           * to y:0. Opacity fades in over the first ~55% of the slide so the early
+           * sub-pixel sliver is always invisible.
+           *
+           * To adjust speed:  change `duration` (seconds)
+           * To adjust stagger: change the `i * 0.14` multiplier
+           */}
+          <motion.span
+            style={{ display: 'block', ...style }}
+            initial={noAnim ? false : { y: '100%', opacity: 0 }}
+            animate={inView ? { y: 0, opacity: 1 } : {}}
+            transition={{
+              duration: 1.1,        // ← slide speed per line
+              delay:    i * 0.18,   // ← stagger delay (line 1 = 0s, 2 = 0.18s, 3 = 0.36s)
+              ease:     EASE_KINETIC,
+              opacity: {
+                duration: 0.65,
+                ease:     'easeOut',
+                delay:    i * 0.18,
+              },
+            }}
+          >
+            {text}
+          </motion.span>
+        </span>
+      ))}
+    </blockquote>
+  )
+}
+
+// ─── Why-Us image — self-contained placeholder + real image ───────────────────
+// Renders an elegant placeholder when /images/why-us.jpg is missing.
+// Add that file to frontend/public/images/ and it will display automatically.
+function WhyUsImage() {
+  const [imgError, setImgError] = useState(false)
+
+  return (
+    <>
+      {/* Placeholder layer — bone background + centered label.
+          Always present; the real image covers it when loaded. */}
+      <div
+        className="absolute inset-0 flex items-center justify-center"
+        style={{ backgroundColor: '#F7F3EE', border: `1px solid ${C.border}` }}
+      >
+        <p
+          className="text-xs tracking-wide select-none"
+          style={{ color: C.muted, opacity: 0.55 }}
+          dir="rtl"
+        >
+          تصویر بخش اعتماد
+        </p>
+      </div>
+
+      {/* Real image — shown automatically once why-us.jpg is placed in public/images/.
+          onError hides it and reveals the placeholder if the file is missing. */}
+      {!imgError && (
+        <Image
+          src="/images/why-us.jpg"
+          alt="داروخانه سبز — بخش چرا ما"
+          fill
+          className="object-cover"
+          sizes="(max-width: 768px) 100vw, 60vw"
+          onError={() => setImgError(true)}
+        />
+      )}
+    </>
+  )
+}
+
+// ─── Trust statistics band ────────────────────────────────────────────────────
+// Edit these values without touching any layout code.
+const TRUST_STATS: ReadonlyArray<{ value: string; label: string }> = [
+  { value: '100٪', label: 'اصالت کالا' },
+  { value: '500+', label: 'محصول معتبر' },
+  { value: 'ارسال', label: 'سراسری ایران' },
+  { value: 'پشتیبانی', label: 'تخصصی' },
+]
+
+function TrustBand() {
+  const ref    = useRef<HTMLDivElement>(null)
+  const inView = useInView(ref, { once: true, margin: '-60px' })
+  const noAnim = useReducedMotion() ?? false
+
+  return (
+    <section
+      aria-label="آمار اعتماد"
+      style={{
+        backgroundColor: C.bg,
+        borderTop:    `1px solid ${C.border}`,
+        borderBottom: `1px solid ${C.border}`,
+      }}
+    >
+      <div ref={ref} className="max-w-5xl mx-auto px-6 md:px-10 py-16 md:py-20">
+        {/*
+         * Desktop: 7-column grid — alternating [content 1fr] and [separator 1px].
+         * Mobile:  standard 2×2 grid — separator divs are display:none so the
+         *          grid sees only 4 children and places them 2 per row.
+         */}
+        <div className="grid grid-cols-2 md:grid-cols-[1fr_1px_1fr_1px_1fr_1px_1fr] items-center gap-y-10 md:gap-y-0">
+
+          {TRUST_STATS.flatMap((stat, i) => {
+            const item = (
+              <motion.div
+                key={stat.label}
+                className="flex flex-col items-center text-center px-3 md:px-8 py-4 md:py-8"
+                initial={noAnim ? false : { opacity: 0, y: 20 }}
+                animate={inView ? { opacity: 1, y: 0 } : {}}
+                transition={{ duration: 0.7, delay: i * 0.1, ease: EASE_ENTER }}
+              >
+                {/* Large value — strong typographic weight */}
+                <span
+                  className="font-bold leading-none mb-2.5"
+                  style={{
+                    fontSize:      'clamp(2.2rem, 3.5vw, 3.4rem)',
+                    letterSpacing: '-0.03em',
+                    color:         C.dark,
+                  }}
+                >
+                  {stat.value}
+                </span>
+                {/* Quiet label */}
+                <span className="text-sm leading-snug" style={{ color: C.muted }}>
+                  {stat.label}
+                </span>
+              </motion.div>
+            )
+
+            // Thin vertical separator — desktop only, disappears from grid on mobile
+            const sep = i < TRUST_STATS.length - 1 ? (
+              <div
+                key={`sep-${i}`}
+                aria-hidden
+                className="hidden md:block self-stretch"
+                style={{ width: 1, margin: '0 auto', backgroundColor: 'rgba(110,100,90,0.14)' }}
+              />
+            ) : null
+
+            return sep ? [item, sep] : [item]
+          })}
+
+        </div>
+      </div>
+    </section>
+  )
+}
+
 // ─── Trust items ──────────────────────────────────────────────────────────────
 const WHY_ITEMS = [
   { icon: BadgeCheck,  title: 'ضمانت اصالت کالا', desc: 'تمامی محصولات دارای گواهی اصالت از تامین‌کننده رسمی هستند.' },
@@ -307,6 +493,24 @@ export default function HomePage() {
   const imgY        = useTransform(scrollYProgress, [0, 1], [0,   -40])
   const textOpacity = useTransform(scrollYProgress, [0, 0.65], [1,  0.72])
   const textY       = useTransform(scrollYProgress, [0, 1],    [0, -20])
+
+  // Brand Philosophy — organic shape moves at ~0.4× scroll speed
+  const philosophyRef = useRef<HTMLDivElement>(null)
+  const { scrollYProgress: philosophyProgress } = useScroll({
+    target: philosophyRef,
+    offset: ['start end', 'end start'],
+  })
+  const organicY      = useTransform(philosophyProgress, [0, 1], ['40px', '-80px'])
+  const organicRotate = useTransform(philosophyProgress, [0, 1], [0, 6])
+
+  // Why / Trust — image parallax (scale + drift)
+  const whyRef      = useRef<HTMLDivElement>(null)
+  const { scrollYProgress: whyProgress } = useScroll({
+    target: whyRef,
+    offset: ['start end', 'end start'],
+  })
+  const whyImgScale = useTransform(whyProgress, [0, 1], [1, 1.05])
+  const whyImgY     = useTransform(whyProgress, [0, 1], ['0px', '-30px'])
 
   useEffect(() => {
     Promise.allSettled([
@@ -456,58 +660,77 @@ export default function HomePage() {
         )}
 
         {/* ══ BRAND PHILOSOPHY ══════════════════════════════════════════════════
-            Signature quote — very large type, maximal whitespace.
-            Product molecule layer occupies the surrounding negative space.
+            Luxury editorial pause.
+            Layers: background · radial glow · organic parallax shape · quote · signature.
+            No decoration. Depth through light and whitespace only.
         */}
         <section
-          className="relative py-28 md:py-48 overflow-hidden"
+          ref={philosophyRef}
+          className="relative py-44 md:py-72 overflow-hidden"
           style={{ backgroundColor: C.bg }}
         >
-          {/* Floating product molecules — absolute, aria-hidden, z-0 */}
-          <ProductMoleculesLayer />
+          {/* Layer 1 — ambient radial glow: warm bone-white, 7% opacity, centered */}
+          <div
+            aria-hidden
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: 'radial-gradient(ellipse 75% 55% at 50% 50%, rgba(210, 200, 183, 0.07) 0%, transparent 68%)',
+            }}
+          />
 
-          {/* Quote — above botanical layer */}
-          <FadeIn y={16} className="relative z-10 max-w-4xl mx-auto px-6 md:px-10 text-center">
+          {/* Layer 2 — abstract organic shape: no object recognition, moves at ~0.4× scroll */}
+          <motion.div
+            aria-hidden
+            className="absolute pointer-events-none"
+            style={{
+              left:         '-18%',
+              bottom:       '-10%',
+              width:        'clamp(340px, 50vw, 660px)',
+              height:       'clamp(340px, 50vw, 660px)',
+              borderRadius: '62% 38% 52% 48% / 44% 58% 42% 56%',
+              background:   'radial-gradient(ellipse at 52% 46%, rgba(208, 197, 178, 0.052) 0%, rgba(218, 208, 191, 0.026) 44%, transparent 66%)',
+              y:      prefersReducedMotion ? 0 : organicY,
+              rotate: prefersReducedMotion ? 0 : organicRotate,
+            }}
+          />
+
+          {/* Layers 3 & 4 — quote + signature */}
+          <FadeIn
+            y={14}
+            duration={0.95}
+            className="relative z-10 max-w-3xl mx-auto px-6 md:px-10 text-center"
+          >
             {/* Top rule */}
             <motion.div
-              className="mx-auto mb-14 md:mb-20"
+              className="mx-auto mb-16 md:mb-24"
               initial={{ width: 0 }}
               whileInView={{ width: 44 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.8, ease: EASE_ENTER }}
+              transition={{ duration: 1.0, ease: EASE_ENTER }}
               style={{ height: 1, backgroundColor: C.border }}
             />
 
-            <blockquote
-              className="font-light"
-              style={{
-                fontSize: 'clamp(2.1rem, 7vw, 5.5rem)',
-                color: C.dark,
-                letterSpacing: '-0.04em',
-                lineHeight: 1.08,
-              }}
-            >
-              مراقبت از خود،
-              <br />
-              <span style={{ color: C.muted, fontWeight: 300 }}>سرمایه‌گذاری</span>
-              <br />
-              در زندگی‌ست.
-            </blockquote>
+            <KineticQuote />
 
-            <p
-              className="mt-10 md:mt-14 text-xs tracking-editorial"
+            {/* Signature — delayed so it trails the last line settling */}
+            <motion.p
+              className="mt-12 md:mt-16 text-xs tracking-editorial"
               style={{ color: C.muted }}
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.9, delay: 0.55, ease: 'easeOut' }}
             >
               — داروخانه سبز
-            </p>
+            </motion.p>
 
             {/* Bottom rule */}
             <motion.div
-              className="mx-auto mt-14 md:mt-20"
+              className="mx-auto mt-16 md:mt-24"
               initial={{ width: 0 }}
               whileInView={{ width: 44 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: 0.2, ease: EASE_ENTER }}
+              transition={{ duration: 1.0, delay: 0.28, ease: EASE_ENTER }}
               style={{ height: 1, backgroundColor: C.border }}
             />
           </FadeIn>
@@ -664,6 +887,12 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* ══ TRUST BAND ════════════════════════════════════════════════════════
+            Premium statistics bridge between Brand Story and Promo Banner.
+            Quiet confidence — no cards, no shadows, pure typography.
+        */}
+        <TrustBand />
+
         {/* ══ PROMO BANNER ══════════════════════════════════════════════════════
             Floating dark card with generous breathing room around it.
         */}
@@ -725,68 +954,106 @@ export default function HomePage() {
         )}
 
         {/* ══ TRUST ═════════════════════════════════════════════════════════════
-            Minimal list layout — ordinal + icon + copy, lots of air.
-            No hairline grid, no boxes. Pure editorial.
+            Premium editorial split — large image (55%) + feature list (45%).
+            Mobile: image stacked above content.
+            Desktop: image LEFT, content RIGHT (RTL grid: order-2 = left column).
         */}
-        <section className="py-20 md:py-36" style={{ backgroundColor: C.bg2 }}>
-          <div className="max-w-3xl mx-auto px-6 md:px-10">
+        <section
+          ref={whyRef}
+          className="overflow-hidden"
+          style={{ backgroundColor: C.bg2 }}
+        >
+          <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-10 py-14 md:py-20 lg:py-24">
+            <div className="flex flex-col md:grid md:grid-cols-[60fr_40fr] gap-5 md:gap-8 lg:gap-12">
 
-            <FadeIn className="mb-16 md:mb-24">
-              <p className="text-xs tracking-editorial mb-3" style={{ color: C.muted }}>
-                چرا داروخانه سبز
-              </p>
-              <h2
-                className="text-2xl md:text-3xl font-bold"
-                style={{ color: C.dark, letterSpacing: '-0.025em', lineHeight: 1.15 }}
+              {/* ── Image column ─────────────────────────────────────────────
+                  order-1 md:order-2  →  top on mobile, LEFT column on desktop (RTL grid).
+                  Place frontend/public/images/why-us.jpg to activate the real image.
+                  Mobile: 480px tall. Desktop: 820px tall.
+              */}
+              <div
+                className="order-1 md:order-2 relative overflow-hidden h-120 md:h-205"
+                style={{ borderRadius: 18 }}
               >
-                تجربه‌ای متفاوت<br />در هر خرید
-              </h2>
-            </FadeIn>
+                <motion.div
+                  className="absolute inset-0"
+                  style={prefersReducedMotion ? {} : { scale: whyImgScale, y: whyImgY }}
+                >
+                  <WhyUsImage />
+                </motion.div>
+              </div>
 
-            <div>
-              {WHY_ITEMS.map(({ icon: Icon, title, desc }, i) => (
-                <FadeIn key={title} delay={i * 0.07} y={10}>
-                  <div
-                    className="flex items-start gap-6 py-7 md:py-10"
-                    style={{
-                      borderBottom: i < WHY_ITEMS.length - 1
-                        ? `1px solid ${C.border}`
-                        : 'none',
-                    }}
-                  >
-                    {/* Ordinal */}
-                    <span
-                      className="font-mono text-xs tracking-wider shrink-0 mt-0.5 select-none"
-                      style={{ color: C.muted, opacity: 0.45 }}
+              {/* ── Content column ───────────────────────────────────────────
+                  order-2 md:order-1  →  below image on mobile, RIGHT column on desktop
+              */}
+              <div className="order-2 md:order-1 flex flex-col justify-center
+                              px-2 md:px-8 lg:px-12 py-6 md:py-0">
+                <div className="max-w-sm mx-auto md:mx-0">
+
+                  {/* Heading block */}
+                  <FadeIn y={12} className="mb-8 md:mb-10">
+                    <p className="text-xs tracking-editorial mb-3" style={{ color: C.muted }}>
+                      چرا داروخانه سبز
+                    </p>
+                    <h2
+                      className="text-2xl md:text-3xl font-bold"
+                      style={{ color: C.dark, letterSpacing: '-0.025em', lineHeight: 1.15 }}
                     >
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
-
-                    {/* Icon */}
-                    <Icon
-                      className="w-4 h-4 shrink-0 mt-0.5"
-                      strokeWidth={1.3}
-                      style={{ color: C.green }}
+                      تجربه‌ای متفاوت<br />در هر خرید
+                    </h2>
+                    <div
+                      className="mt-6"
+                      style={{ height: 1, width: 36, backgroundColor: C.border }}
                     />
+                  </FadeIn>
 
-                    {/* Copy */}
-                    <div className="min-w-0">
-                      <h3
-                        className="font-semibold text-sm md:text-base mb-1.5"
-                        style={{ color: C.dark }}
-                      >
-                        {title}
-                      </h3>
-                      <p
-                        className="text-xs md:text-sm leading-relaxed"
-                        style={{ color: C.muted }}
-                      >
-                        {desc}
-                      </p>
-                    </div>
+                  {/* Feature list — stagger 0 / 100 / 200 / 300ms */}
+                  <div>
+                    {WHY_ITEMS.map(({ icon: Icon, title, desc }, i) => (
+                      <FadeIn key={title} delay={i * 0.1} y={8}>
+                        <div
+                          className="flex items-start gap-5 py-5 md:py-7"
+                          style={{
+                            borderBottom: i < WHY_ITEMS.length - 1
+                              ? `1px solid ${C.border}`
+                              : 'none',
+                          }}
+                        >
+                          <span
+                            className="font-mono text-xs tracking-wider shrink-0 mt-0.5 select-none"
+                            style={{ color: C.muted, opacity: 0.4 }}
+                          >
+                            {String(i + 1).padStart(2, '0')}
+                          </span>
+
+                          <Icon
+                            className="w-4 h-4 shrink-0 mt-0.5"
+                            strokeWidth={1.3}
+                            style={{ color: C.green }}
+                          />
+
+                          <div className="min-w-0">
+                            <h3
+                              className="font-semibold text-sm md:text-base mb-1.5"
+                              style={{ color: C.dark }}
+                            >
+                              {title}
+                            </h3>
+                            <p
+                              className="text-xs md:text-sm leading-relaxed"
+                              style={{ color: C.muted }}
+                            >
+                              {desc}
+                            </p>
+                          </div>
+                        </div>
+                      </FadeIn>
+                    ))}
                   </div>
-                </FadeIn>
-              ))}
+
+                </div>
+              </div>
+
             </div>
           </div>
         </section>
