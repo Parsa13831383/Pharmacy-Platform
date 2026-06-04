@@ -19,6 +19,7 @@ export interface OrderItem {
   quantity: number
   unitPrice: string
   totalPrice: string
+  productImage: string | null
 }
 
 /** Full order — returned by GET /api/admin/orders/:id */
@@ -41,15 +42,17 @@ export interface Order {
   items: OrderItem[]
 }
 
-/** List view — returned by GET /api/admin/orders (no items, no address fields) */
+/** List view — returned by GET /api/admin/orders */
 export interface OrderListItem {
   id: string
   orderNumber: string
   customerName: string
   customerPhone: string
+  deliveryAddress: string
   orderStatus: OrderStatus
   paymentStatus: PaymentStatus
   paymentMethod: PaymentMethod
+  contactMethod: ContactMethod
   totalAmount: string
   createdAt: string
 }

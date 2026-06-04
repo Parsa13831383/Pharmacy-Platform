@@ -10,9 +10,11 @@ export async function listAdminOrders() {
       orderNumber: true,
       customerName: true,
       customerPhone: true,
+      deliveryAddress: true,
       orderStatus: true,
       paymentStatus: true,
       paymentMethod: true,
+      contactMethod: true,
       totalAmount: true,
       createdAt: true,
     },
@@ -25,34 +27,74 @@ export async function getAdminOrderById(id: string) {
     where: { id },
     include: {
       items: {
-        select: {
-          id: true,
-          productId: true,
-          productNameSnapshot: true,
-          quantity: true,
-          unitPrice: true,
-          totalPrice: true,
+        include: {
+          product: {
+            select: {
+              images: {
+                where: { isPrimary: true },
+                select: { imageUrl: true },
+                take: 1,
+              },
+            },
+          },
         },
       },
     },
   })
   if (!order) throw new AppError('Order not found', 404)
-  return order
+
+  return {
+    ...order,
+    items: order.items.map(item => ({
+      id: item.id,
+      productId: item.productId,
+      productNameSnapshot: item.productNameSnapshot,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      totalPrice: item.totalPrice,
+      productImage: item.product.images[0]?.imageUrl ?? null,
+    })),
+  }
 }
 
 export async function updateOrderStatus(id: string, input: UpdateOrderStatusInput) {
-  const order = await prisma.order.findUnique({ where: { id } })
+  const order = await prisma.order.findUnique({
+    where: { id },
+    include: {
+      items: { select: { productId: true, quantity: true } },
+    },
+  })
   if (!order) throw new AppError('Order not found', 404)
 
-  return prisma.order.update({
-    where: { id },
-    data: { orderStatus: input.orderStatus as OrderStatus },
-    select: {
-      id: true,
-      orderNumber: true,
-      orderStatus: true,
-      updatedAt: true,
-    },
+  // Restore stock only when transitioning INTO cancelled — prevents double-restoration
+  // if the PATCH is called twice with CANCELLED.
+  const isCancelling =
+    input.orderStatus === 'CANCELLED' && order.orderStatus !== 'CANCELLED'
+
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.order.update({
+      where: { id },
+      data: { orderStatus: input.orderStatus as OrderStatus },
+      select: { id: true, orderNumber: true, orderStatus: true, updatedAt: true },
+    })
+
+    if (isCancelling) {
+      for (const item of order.items) {
+        await tx.product.update({
+          where: { id: item.productId },
+          data: { stockQuantity: { increment: item.quantity } },
+        })
+        await tx.inventoryAdjustment.create({
+          data: {
+            productId: item.productId,
+            quantityDelta: item.quantity,
+            reason: `Cancelled Order ${order.orderNumber}`,
+          },
+        })
+      }
+    }
+
+    return updated
   })
 }
 
