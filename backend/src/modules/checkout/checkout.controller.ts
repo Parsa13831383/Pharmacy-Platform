@@ -12,8 +12,13 @@ export async function sendOtpController(req: Request, res: Response) {
   try {
     const data = await sendOtp(result.data)
     res.json({ success: true, data })
-  } catch {
-    res.status(500).json({ success: false, message: 'Internal server error' })
+  } catch (err) {
+    if (err instanceof AppError) {
+      res.status(err.statusCode).json({ success: false, message: err.message })
+    } else {
+      console.error('[sendOtpController]', err)
+      res.status(500).json({ success: false, message: 'خطای داخلی سرور.' })
+    }
   }
 }
 

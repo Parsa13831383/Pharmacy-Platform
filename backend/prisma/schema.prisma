@@ -43,27 +43,31 @@ model PhoneOtp {
   codeHash  String
   purpose   OtpPurpose @default(CHECKOUT)
   isUsed    Boolean    @default(false)
+  attempts  Int        @default(0)
   expiresAt DateTime
   createdAt DateTime   @default(now())
 
   @@index([phone])
+  @@index([phone, createdAt])
 }
 
 model Order {
-  id              String        @id @default(uuid())
-  orderNumber     String        @unique
-  customerName    String
-  customerPhone   String
-  deliveryAddress String
-  deliveryNotes   String?
-  contactMethod   ContactMethod
-  paymentMethod   PaymentMethod
-  paymentStatus   PaymentStatus @default(PENDING)
-  orderStatus     OrderStatus   @default(PENDING)
-  totalAmount     Decimal       @db.Decimal(12, 2)
-  idempotencyKey  String?       @unique
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id                String        @id @default(uuid())
+  orderNumber       String        @unique
+  customerName      String
+  customerPhone     String
+  deliveryAddress   String
+  deliveryNotes     String?
+  deliveryLatitude  Float?
+  deliveryLongitude Float?
+  contactMethod     ContactMethod
+  paymentMethod     PaymentMethod
+  paymentStatus     PaymentStatus @default(PENDING)
+  orderStatus       OrderStatus   @default(PENDING)
+  totalAmount       Decimal       @db.Decimal(12, 2)
+  idempotencyKey    String?       @unique
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
   items OrderItem[]
 }

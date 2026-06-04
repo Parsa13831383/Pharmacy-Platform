@@ -18,9 +18,10 @@ export const env = {
   ADMIN_JWT_EXPIRES_IN: getOr('ADMIN_JWT_EXPIRES_IN', '7d'),
   NODE_ENV: getOr('NODE_ENV', 'development'),
   PORT: Number(getOr('PORT', '3000')),
-  // Publicly reachable backend URL — used to build absolute image URLs stored in the DB.
-  // In production set this to your Render URL, e.g. https://your-app.onrender.com
   BASE_URL: getOr('BASE_URL', 'http://localhost:3000'),
-  // Frontend origin allowed by CORS. In production set to your Vercel URL.
   FRONTEND_URL: getOr('FRONTEND_URL', ''),
+  // SMS — Kavenegar
+  // Set SMS_MOCK_MODE=false in production and provide a real KAVENEGAR_API_KEY.
+  KAVENEGAR_API_KEY: getOr('KAVENEGAR_API_KEY', ''),
+  SMS_MOCK_MODE: getOr('SMS_MOCK_MODE', 'true') === 'true',
 }

@@ -29,6 +29,8 @@ export interface Order {
   customerPhone: string
   deliveryAddress: string
   deliveryNotes: string | null
+  deliveryLatitude: number | null
+  deliveryLongitude: number | null
   contactMethod: ContactMethod
   paymentMethod: PaymentMethod
   paymentStatus: PaymentStatus

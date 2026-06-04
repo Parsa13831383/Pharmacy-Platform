@@ -23,6 +23,8 @@ export interface CreateOrderPayload {
   customerPhone: string
   deliveryAddress: string
   deliveryNotes?: string
+  deliveryLatitude: number
+  deliveryLongitude: number
   contactMethod: CheckoutContactMethod
   paymentMethod: CheckoutPaymentMethod
   items: OrderLineItem[]

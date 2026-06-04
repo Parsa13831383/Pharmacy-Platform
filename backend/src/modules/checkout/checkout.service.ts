@@ -1,57 +1,30 @@
 import type { Prisma } from '@prisma/client'
 import prisma from '../../lib/prisma'
 import { AppError } from '../../lib/errors'
-import { hashPassword, comparePassword } from '../../lib/bcrypt'
-import { env } from '../../config/env'
+import { normalizePhone } from '../../lib/phone'
+import { sendOtp as _sendOtp, verifyOtp as _verifyOtp } from '../../services/otp.service'
 import type { SendOtpInput, VerifyOtpInput, CreateOrderInput } from './checkout.validation'
 
-// ─── OTP ─────────────────────────────────────────────────────────────────────
+// ─── OTP (delegates to otp.service) ──────────────────────────────────────────
 
-function generateOtpCode(): string {
-  return String(Math.floor(100000 + Math.random() * 900000))
+export async function sendOtp(input: SendOtpInput): Promise<{ message: string }> {
+  await _sendOtp(input.phone)
+  return { message: 'کد تایید ارسال شد.' }
 }
 
-export async function sendOtp(input: SendOtpInput) {
-  const code = generateOtpCode()
-  const codeHash = await hashPassword(code)
-  const expiresAt = new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
-
-  await prisma.phoneOtp.create({
-    data: { phone: input.phone, codeHash, purpose: 'CHECKOUT', expiresAt },
-  })
-
-  // Expose code only in development — in production, the SMS provider would send it
-  if (env.NODE_ENV === 'development') {
-    return { message: 'OTP sent', code }
-  }
-  return { message: 'OTP sent' }
-}
-
-export async function verifyOtp(input: VerifyOtpInput) {
-  const otp = await prisma.phoneOtp.findFirst({
-    where: { phone: input.phone, purpose: 'CHECKOUT', isUsed: false },
-    orderBy: { createdAt: 'desc' },
-  })
-
-  if (!otp) throw new AppError('No active OTP found for this phone', 400)
-  if (otp.expiresAt < new Date()) throw new AppError('OTP has expired', 400)
-
-  const valid = await comparePassword(input.code, otp.codeHash)
-  if (!valid) throw new AppError('Invalid OTP code', 400)
-
-  await prisma.phoneOtp.update({ where: { id: otp.id }, data: { isUsed: true } })
-
+export async function verifyOtp(input: VerifyOtpInput): Promise<{ verified: boolean }> {
+  await _verifyOtp(input.phone, input.code)
   return { verified: true }
 }
 
 // ─── Order ───────────────────────────────────────────────────────────────────
 
 type LineItem = {
-  productId: string
+  productId:           string
   productNameSnapshot: string
-  quantity: number
-  unitPrice: number
-  totalPrice: number
+  quantity:            number
+  unitPrice:           number
+  totalPrice:          number
 }
 
 function buildOrderNumber(dateStr: string, todayCount: number): string {
@@ -59,47 +32,45 @@ function buildOrderNumber(dateStr: string, todayCount: number): string {
 }
 
 export async function createOrder(input: CreateOrderInput) {
-  // Verify the customer completed OTP within the last 30 minutes
+  const customerPhone = normalizePhone(input.customerPhone)
+
+  // Require a verified OTP within the last 30 minutes
   const verifiedOtp = await prisma.phoneOtp.findFirst({
     where: {
-      phone: input.customerPhone,
-      purpose: 'CHECKOUT',
-      isUsed: true,
-      createdAt: { gte: new Date(Date.now() - 30 * 60 * 1000) },
+      phone:     customerPhone,
+      purpose:   'CHECKOUT',
+      isUsed:    true,
+      createdAt: { gte: new Date(Date.now() - 30 * 60 * 1_000) },
     },
     orderBy: { createdAt: 'desc' },
   })
   if (!verifiedOtp) {
-    throw new AppError('Phone number not verified. Please verify your OTP first.', 401)
+    throw new AppError('شماره موبایل تایید نشده است. لطفاً ابتدا کد تایید دریافت کنید.', 401)
   }
 
   return prisma.$transaction(async (tx) => {
-    // ── 1. Generate order number ───────────────────────────────────────────
-    const now = new Date()
-    const y = now.getFullYear()
-    const m = String(now.getMonth() + 1).padStart(2, '0')
-    const d = String(now.getDate()).padStart(2, '0')
-    const dateStr = `${y}${m}${d}`
-
+    // ── 1. Order number ────────────────────────────────────────────────────
+    const now     = new Date()
+    const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`
     const todayStart = new Date(now)
     todayStart.setHours(0, 0, 0, 0)
-    const todayCount = await tx.order.count({ where: { createdAt: { gte: todayStart } } })
+    const todayCount  = await tx.order.count({ where: { createdAt: { gte: todayStart } } })
     const orderNumber = buildOrderNumber(dateStr, todayCount)
 
     // ── 2. Load products ───────────────────────────────────────────────────
     const productIds = [...new Set(input.items.map((i) => i.productId))]
-    const products = await tx.product.findMany({ where: { id: { in: productIds } } })
+    const products   = await tx.product.findMany({ where: { id: { in: productIds } } })
     const productMap = new Map(products.map((p) => [p.id, p]))
 
-    // ── 3. Validate stock (aggregate across duplicate productIds) ──────────
+    // ── 3. Validate + aggregate stock ────────────────────────────────────
     const stockChanges = new Map<string, { totalQty: number; newStock: number }>()
 
     for (const item of input.items) {
       const product = productMap.get(item.productId)
-      if (!product) throw new AppError(`Product not found: ${item.productId}`, 404)
-      if (!product.isActive) throw new AppError(`Product "${product.name}" is not available`, 400)
+      if (!product)         throw new AppError(`محصول یافت نشد: ${item.productId}`, 404)
+      if (!product.isActive) throw new AppError(`محصول "${product.name}" موجود نیست.`, 400)
 
-      const prev = stockChanges.get(item.productId)
+      const prev     = stockChanges.get(item.productId)
       const totalQty = (prev?.totalQty ?? 0) + item.quantity
       stockChanges.set(item.productId, { totalQty, newStock: product.stockQuantity - totalQty })
     }
@@ -107,21 +78,22 @@ export async function createOrder(input: CreateOrderInput) {
     for (const [productId, { newStock }] of stockChanges) {
       if (newStock < 0) {
         const product = productMap.get(productId)
-        throw new AppError(`Insufficient stock for "${product?.name ?? productId}"`, 400)
+        throw new AppError(`موجودی کافی برای "${product?.name ?? productId}" وجود ندارد.`, 400)
       }
     }
 
     // ── 4. Build line items ────────────────────────────────────────────────
     const lineItems: LineItem[] = input.items.map((item) => {
-      const product = productMap.get(item.productId)!
-      const unitPrice =
-        product.discountedPrice !== null ? Number(product.discountedPrice) : Number(product.price)
+      const product   = productMap.get(item.productId)!
+      const unitPrice = product.discountedPrice !== null
+        ? Number(product.discountedPrice)
+        : Number(product.price)
       return {
-        productId: item.productId,
+        productId:           item.productId,
         productNameSnapshot: product.name,
-        quantity: item.quantity,
+        quantity:            item.quantity,
         unitPrice,
-        totalPrice: unitPrice * item.quantity,
+        totalPrice:          unitPrice * item.quantity,
       }
     })
 
@@ -130,11 +102,13 @@ export async function createOrder(input: CreateOrderInput) {
     // ── 5. Create order ────────────────────────────────────────────────────
     const orderData: Prisma.OrderCreateInput = {
       orderNumber,
-      customerName: input.customerName,
-      customerPhone: input.customerPhone,
-      deliveryAddress: input.deliveryAddress,
-      contactMethod: input.contactMethod,
-      paymentMethod: input.paymentMethod,
+      customerName:      input.customerName,
+      customerPhone,
+      deliveryAddress:   input.deliveryAddress,
+      deliveryLatitude:  input.deliveryLatitude,
+      deliveryLongitude: input.deliveryLongitude,
+      contactMethod:     input.contactMethod,
+      paymentMethod:     input.paymentMethod,
       totalAmount,
     }
     if (input.deliveryNotes !== undefined) orderData.deliveryNotes = input.deliveryNotes
@@ -145,17 +119,17 @@ export async function createOrder(input: CreateOrderInput) {
     for (const li of lineItems) {
       await tx.orderItem.create({
         data: {
-          orderId: order.id,
-          productId: li.productId,
+          orderId:             order.id,
+          productId:           li.productId,
           productNameSnapshot: li.productNameSnapshot,
-          quantity: li.quantity,
-          unitPrice: li.unitPrice,
-          totalPrice: li.totalPrice,
+          quantity:            li.quantity,
+          unitPrice:           li.unitPrice,
+          totalPrice:          li.totalPrice,
         },
       })
     }
 
-    // ── 7. Deduct stock + audit (one record per product) ───────────────────
+    // ── 7. Deduct stock + audit ────────────────────────────────────────────
     for (const [productId, { newStock, totalQty }] of stockChanges) {
       await tx.product.update({ where: { id: productId }, data: { stockQuantity: newStock } })
       await tx.inventoryAdjustment.create({

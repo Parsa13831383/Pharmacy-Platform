@@ -1,9 +1,10 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowRight, CheckCircle, Leaf, Lock, Phone, ShoppingBag } from 'lucide-react'
+import { ArrowRight, CheckCircle, Leaf, Lock, MapPin, Phone, ShoppingBag } from 'lucide-react'
 import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
 import { Button } from '@/components/ui/button'
@@ -20,6 +21,11 @@ import type {
   CheckoutContactMethod,
   CheckoutPaymentMethod,
 } from '@/types/checkout'
+
+const MapPickerModal = dynamic(
+  () => import('@/components/checkout/MapPickerModal'),
+  { ssr: false },
+)
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -89,6 +95,11 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] =
     useState<CheckoutPaymentMethod>('PAY_ON_DELIVERY')
 
+  // ── Step 3: Map location (required) ──────────────────────────────────────
+  const [locationLat, setLocationLat] = useState<number | null>(null)
+  const [locationLng, setLocationLng] = useState<number | null>(null)
+  const [mapPickerOpen, setMapPickerOpen] = useState(false)
+
   // ── Step 4: Submit ────────────────────────────────────────────────────────
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
@@ -152,11 +163,21 @@ export default function CheckoutPage() {
     }
   }
 
+  function handleMapConfirm(lat: number, lng: number) {
+    setLocationLat(lat)
+    setLocationLng(lng)
+    setMapPickerOpen(false)
+  }
+
   async function handleSubmit() {
     if (items.length === 0) { setSubmitError('سبد خرید خالی است'); return }
     if (!phoneVerified) { setSubmitError('شماره موبایل تأیید نشده است'); return }
     if (!customerName.trim()) { setSubmitError('نام و نام خانوادگی الزامی است'); return }
     if (!deliveryAddress.trim()) { setSubmitError('آدرس تحویل الزامی است'); return }
+    if (locationLat === null || locationLng === null) {
+      setSubmitError('لطفاً موقعیت تحویل را روی نقشه انتخاب کنید')
+      return
+    }
 
     setSubmitting(true)
     setSubmitError('')
@@ -166,6 +187,8 @@ export default function CheckoutPage() {
         customerPhone: phone,
         deliveryAddress: deliveryAddress.trim(),
         deliveryNotes: deliveryNotes.trim() || undefined,
+        deliveryLatitude:  locationLat,
+        deliveryLongitude: locationLng,
         contactMethod,
         paymentMethod,
         items: items.map(i => ({ productId: i.id, quantity: i.quantity })),
@@ -482,6 +505,28 @@ export default function CheckoutPage() {
                       />
                     </div>
 
+                    {/* Map location (required) */}
+                    <div className="space-y-2">
+                      <button
+                        type="button"
+                        onClick={() => setMapPickerOpen(true)}
+                        className={`flex items-center gap-2 text-sm border rounded px-3 py-2 transition-colors ${
+                          locationLat !== null
+                            ? 'text-primary border-primary/40 bg-primary/8'
+                            : 'text-primary border-primary/30 bg-primary/5 hover:bg-primary/10'
+                        }`}
+                      >
+                        <MapPin className="w-4 h-4" />
+                        {locationLat !== null ? 'ویرایش موقعیت روی نقشه' : 'انتخاب موقعیت روی نقشه *'}
+                      </button>
+                      {locationLat !== null && locationLng !== null && (
+                        <p className="text-sm text-primary flex items-center gap-1.5">
+                          <CheckCircle className="w-3.5 h-3.5" />
+                          موقعیت روی نقشه با موفقیت ثبت شد
+                        </p>
+                      )}
+                    </div>
+
                     {/* Notes */}
                     <div className="space-y-2">
                       <Label htmlFor="notes">
@@ -548,11 +593,10 @@ export default function CheckoutPage() {
                     <div className="pt-2 flex justify-end">
                       <Button
                         onClick={() => {
-                          if (!customerName.trim()) return
-                          if (!deliveryAddress.trim()) return
+                          if (!customerName.trim() || !deliveryAddress.trim() || locationLat === null) return
                           setStep(4)
                         }}
-                        disabled={!customerName.trim() || !deliveryAddress.trim()}
+                        disabled={!customerName.trim() || !deliveryAddress.trim() || locationLat === null}
                         className="rounded px-8 gap-2"
                       >
                         بررسی و ثبت سفارش
@@ -578,6 +622,11 @@ export default function CheckoutPage() {
                       <Row label="نام گیرنده">{customerName}</Row>
                       <Row label="آدرس">{deliveryAddress}</Row>
                       {deliveryNotes && <Row label="توضیحات">{deliveryNotes}</Row>}
+                      {locationLat !== null && locationLng !== null && (
+                        <Row label="موقعیت جغرافیایی">
+                          <span className="text-xs text-primary">✓ ثبت شده</span>
+                        </Row>
+                      )}
                       <Row label="روش ارتباط">
                         {CONTACT_OPTIONS.find(c => c.value === contactMethod)?.label}
                       </Row>
@@ -628,7 +677,7 @@ export default function CheckoutPage() {
                   {/* Submit button */}
                   <Button
                     onClick={handleSubmit}
-                    disabled={submitting || items.length === 0}
+                    disabled={submitting || items.length === 0 || locationLat === null || locationLng === null}
                     size="lg"
                     className="w-full rounded h-14 text-base"
                   >
@@ -707,6 +756,15 @@ export default function CheckoutPage() {
       </main>
 
       <Footer />
+
+      {mapPickerOpen && (
+        <MapPickerModal
+          initialLat={locationLat}
+          initialLng={locationLng}
+          onConfirm={handleMapConfirm}
+          onClose={() => setMapPickerOpen(false)}
+        />
+      )}
     </div>
   )
 }

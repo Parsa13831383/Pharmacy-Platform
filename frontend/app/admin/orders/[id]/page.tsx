@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, ExternalLink } from 'lucide-react'
 import { AdminShell } from '@/components/admin/AdminShell'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -179,6 +179,19 @@ export default function OrderDetailPage() {
                 {order.deliveryNotes && (
                   <InfoRow label="یادداشت تحویل">
                     <span className="text-right block max-w-[200px]">{order.deliveryNotes}</span>
+                  </InfoRow>
+                )}
+                {order.deliveryLatitude !== null && order.deliveryLongitude !== null && (
+                  <InfoRow label="موقعیت">
+                    <a
+                      href={`https://www.google.com/maps?q=${order.deliveryLatitude},${order.deliveryLongitude}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline flex items-center gap-1"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      باز کردن در گوگل مپ
+                    </a>
                   </InfoRow>
                 )}
               </div>
