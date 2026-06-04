@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Mail, MapPin, Phone } from 'lucide-react'
+import { MapPin, Phone, Smartphone } from 'lucide-react'
 
 export function Footer() {
   return (
@@ -10,16 +10,18 @@ export function Footer() {
           {/* Brand */}
           <div className="space-y-4 col-span-2 md:col-span-1 lg:col-span-1">
             <Link href="/" className="inline-block">
-              <span className="font-bold text-lg" style={{ color: '#232323', letterSpacing: '-0.02em' }}>
-                داروخانه سبز
+              <span className="font-bold text-base leading-tight" style={{ color: '#232323', letterSpacing: '-0.02em' }}>
+                داروخانه دکتر پویا نانوازاده
               </span>
             </Link>
-            <p className="text-sm leading-relaxed" style={{ color: '#6F6A61', maxWidth: '22ch' }}>
-              محصولات مراقبتی، آرایشی و بهداشتی با تضمین اصالت و ارسال سریع.
+            <p className="text-sm leading-relaxed" style={{ color: '#6F6A61', maxWidth: '24ch' }}>
+              سلامت، زیبایی و مراقبت با اطمینان — مهاباد
             </p>
             <div className="flex items-center gap-3 pt-2">
               <a
-                href="#"
+                href="https://www.instagram.com/dr.pouyapharmacy"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-8 h-8 flex items-center justify-center rounded-full border transition-colors text-xs font-bold"
                 style={{ borderColor: '#E5DED1', color: '#6F6A61' }}
                 aria-label="اینستاگرام"
@@ -84,17 +86,17 @@ export function Footer() {
               تماس
             </h4>
             <div className="flex flex-col gap-3">
-              <a href="tel:02112345678" className="flex items-center gap-2.5 text-sm" style={{ color: '#6F6A61' }}>
+              <a href="tel:04442248282" className="flex items-center gap-2.5 text-sm" style={{ color: '#6F6A61' }}>
                 <Phone className="w-3.5 h-3.5 shrink-0" strokeWidth={1.5} />
-                ۰۲۱-۱۲۳۴۵۶۷۸
+                ۰۴۴۴-۲۲۴۸۲۸۲
               </a>
-              <a href="mailto:info@sabzpharmacy.ir" className="flex items-center gap-2.5 text-sm" style={{ color: '#6F6A61' }}>
-                <Mail className="w-3.5 h-3.5 shrink-0" strokeWidth={1.5} />
-                info@sabzpharmacy.ir
+              <a href="tel:09333252226" className="flex items-center gap-2.5 text-sm" style={{ color: '#6F6A61' }}>
+                <Smartphone className="w-3.5 h-3.5 shrink-0" strokeWidth={1.5} />
+                ۰۹۳۳-۳۲۵۲۲۲۶
               </a>
               <div className="flex items-start gap-2.5 text-sm" style={{ color: '#6F6A61' }}>
                 <MapPin className="w-3.5 h-3.5 shrink-0 mt-0.5" strokeWidth={1.5} />
-                تهران، خیابان ولیعصر، پلاک ۱۲۳
+                مهاباد، خیابان صلاح‌الدین ایوبی، غربی ساختمان پزشکان صلاح‌الدین، طبقه همکف
               </div>
             </div>
           </div>
@@ -106,7 +108,7 @@ export function Footer() {
           style={{ borderTop: '1px solid #E5DED1' }}
         >
           <p className="text-xs" style={{ color: '#6F6A61' }}>
-            © ۱۴۰۳ داروخانه سبز. تمامی حقوق محفوظ است.
+            © ۱۴۰۳ داروخانه دکتر پویا نانوازاده. تمامی حقوق محفوظ است.
           </p>
           <Link href="/admin" className="text-xs transition-colors" style={{ color: '#6F6A61' }}>
             پنل مدیریت

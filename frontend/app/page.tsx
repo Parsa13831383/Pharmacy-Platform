@@ -380,7 +380,7 @@ function WhyUsImage() {
       {!imgError && (
         <Image
           src="/images/why-us.jpg"
-          alt="داروخانه سبز — بخش چرا ما"
+          alt="داروخانه دکتر پویا نانوازاده — بخش چرا ما"
           fill
           className="object-cover"
           sizes="(max-width: 768px) 100vw, 60vw"
@@ -470,10 +470,10 @@ function TrustBand() {
 
 // ─── Trust items ──────────────────────────────────────────────────────────────
 const WHY_ITEMS = [
-  { icon: BadgeCheck,  title: 'ضمانت اصالت کالا', desc: 'تمامی محصولات دارای گواهی اصالت از تامین‌کننده رسمی هستند.' },
-  { icon: Truck,       title: 'ارسال سریع',        desc: 'ارسال به سراسر ایران در کمترین زمان ممکن با پیک معتبر.' },
-  { icon: ShieldCheck, title: 'خرید امن',          desc: 'پرداخت از طریق درگاه‌های معتبر بانکی با رمز یکبار مصرف.' },
-  { icon: Leaf,        title: 'محصولات معتبر',     desc: 'منتخبی از بهترین برندهای داخلی و خارجی در حوزه سلامت.' },
+  { icon: BadgeCheck,  title: 'تضمین اصالت محصولات',    desc: 'تمامی محصولات از منابع معتبر تهیه می‌شوند.' },
+  { icon: Leaf,        title: 'مشاوره تخصصی پوست و مو', desc: 'راهنمایی برای انتخاب بهترین محصولات متناسب با نیاز شما.' },
+  { icon: ShieldCheck, title: 'نسخه آنلاین',            desc: 'ثبت و پیگیری نسخه بدون مراجعه حضوری.' },
+  { icon: Truck,       title: 'ارسال سریع',             desc: 'تحویل سفارشات در کوتاه‌ترین زمان ممکن.' },
 ]
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -592,14 +592,14 @@ export default function HomePage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.55, delay: 0.25, ease: EASE_ENTER }}
                   >
-                    داروخانه سبز — مراقبت و زیبایی
+                    داروخانه دکتر پویا نانوازاده
                   </motion.p>
 
                   <div className="space-y-1 mb-7" style={{ overflow: 'hidden' }}>
                     {(cms?.heroTitle
                       ? [cms.heroTitle]
-                      : ['زیبایی، سلامت', 'و مراقبت', 'برای زندگی بهتر']
-                    ).map((line, i) => (
+                      : ['سلامت، زیبایی و مراقبت', 'با اطمینان']
+                    ).map((line, i, arr) => (
                       <motion.div
                         key={i}
                         initial={{ opacity: 0, y: 32 }}
@@ -610,8 +610,8 @@ export default function HomePage() {
                           className="block font-bold leading-none"
                           style={{
                             fontSize: 'clamp(1.9rem, 4.5vw, 3.5rem)',
-                            color: i === 2 ? C.muted : C.dark,
-                            fontWeight: i === 2 ? 400 : 700,
+                            color: i === arr.length - 1 && arr.length > 1 ? C.muted : C.dark,
+                            fontWeight: i === arr.length - 1 && arr.length > 1 ? 400 : 700,
                             letterSpacing: '-0.03em',
                           }}
                         >
@@ -637,7 +637,7 @@ export default function HomePage() {
                     transition={{ duration: 0.65, delay: 0.58, ease: EASE_ENTER }}
                   >
                     {cms?.heroSubtitle ??
-                      'منتخبی از محصولات آرایشی، بهداشتی و مراقبتی با تضمین اصالت کالا و ارسال سریع.'}
+                      'مجموعه‌ای از محصولات دارویی، مراقبت پوست و مو، مکمل‌های غذایی و خدمات مشاوره تخصصی با تضمین اصالت.'}
                   </motion.p>
 
                   <motion.div
@@ -649,9 +649,24 @@ export default function HomePage() {
                     <CtaButton href={cms?.heroButtonLink ?? '/products'} variant="primary">
                       {cms?.heroButtonText ?? 'مشاهده محصولات'}
                     </CtaButton>
-                    <CtaButton href="/products" variant="outline">
-                      دسته‌بندی‌ها
+                    <CtaButton href="/track-order" variant="outline">
+                      ثبت نسخه آنلاین
                     </CtaButton>
+                  </motion.div>
+
+                  {/* Trust badges */}
+                  <motion.div
+                    className="flex flex-wrap gap-x-5 gap-y-2 mt-6"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.6, delay: 0.88, ease: EASE_ENTER }}
+                  >
+                    {['تضمین اصالت کالا', 'مشاوره تخصصی', 'نسخه آنلاین', 'ارسال سریع'].map(badge => (
+                      <span key={badge} className="flex items-center gap-1.5 text-xs" style={{ color: C.muted }}>
+                        <span style={{ color: C.green, fontWeight: 600 }}>✓</span>
+                        {badge}
+                      </span>
+                    ))}
                   </motion.div>
                 </motion.div>
               </div>
@@ -721,7 +736,7 @@ export default function HomePage() {
               viewport={{ once: true }}
               transition={{ duration: 0.9, delay: 0.55, ease: 'easeOut' }}
             >
-              — داروخانه سبز
+              — داروخانه دکتر پویا نانوازاده
             </motion.p>
 
             {/* Bottom rule */}
@@ -857,19 +872,15 @@ export default function HomePage() {
                     lineHeight: 1.1,
                   }}
                 >
-                  کیفیت را از منبع<br />تضمین می‌کنیم
+                  اعتماد از تجربه<br />ساخته می‌شود
                 </h2>
                 <div style={{ height: 1, width: 36, backgroundColor: C.border }} />
                 <p className="leading-relaxed text-sm md:text-base" style={{ color: C.muted }}>
-                  داروخانه سبز با همکاری مستقیم با برندهای معتبر ایرانی و خارجی،
-                  محصولاتی را عرضه می‌کند که کیفیت آنها از مبدا تضمین شده است.
+                  هدف ما تنها فروش محصول نیست؛ ما تلاش می‌کنیم تجربه‌ای مطمئن،
+                  حرفه‌ای و ساده برای سلامت و مراقبت روزانه شما ایجاد کنیم.
                 </p>
-                <p className="text-sm leading-relaxed" style={{ color: C.muted }}>
-                  هر محصول قبل از عرضه، تاییدیه اصالت دریافت می‌کند. ما به پیشنهاد
-                  متخصصین داروخانه اعتقاد داریم — نه فقط فروش.
-                </p>
-                <CtaButton href="/products" variant="outline">
-                  مشاهده محصولات
+                <CtaButton href="#contact" variant="outline">
+                  ارتباط با داروخانه
                 </CtaButton>
               </div>
             </FadeIn>
@@ -993,13 +1004,13 @@ export default function HomePage() {
                   {/* Heading block */}
                   <FadeIn y={12} className="mb-8 md:mb-10">
                     <p className="text-xs tracking-editorial mb-3" style={{ color: C.muted }}>
-                      چرا داروخانه سبز
+                      اعتماد و کیفیت
                     </p>
                     <h2
                       className="text-2xl md:text-3xl font-bold"
                       style={{ color: C.dark, letterSpacing: '-0.025em', lineHeight: 1.15 }}
                     >
-                      تجربه‌ای متفاوت<br />در هر خرید
+                      چرا داروخانه دکتر<br />پویا نانوازاده
                     </h2>
                     <div
                       className="mt-6"
@@ -1054,6 +1065,50 @@ export default function HomePage() {
                 </div>
               </div>
 
+            </div>
+          </div>
+        </section>
+
+        {/* ══ BRANDS ════════════════════════════════════════════════════════════
+            Logo placeholder grid — swap placeholders for real logos when ready.
+        */}
+        <section className="py-16 md:py-24" style={{ backgroundColor: C.white }}>
+          <div className="max-w-5xl mx-auto px-6 md:px-10">
+            <FadeIn className="text-center mb-10 md:mb-14">
+              <p className="text-xs tracking-editorial mb-3" style={{ color: C.muted }}>
+                برندها
+              </p>
+              <h2
+                className="text-xl md:text-2xl font-bold mb-3"
+                style={{ color: C.dark, letterSpacing: '-0.025em' }}
+              >
+                برندهای منتخب
+              </h2>
+              <p className="text-sm" style={{ color: C.muted }}>
+                محصولات منتخب از برندهای معتبر داخلی و بین‌المللی
+              </p>
+            </FadeIn>
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-3 md:gap-4">
+              {Array.from({ length: 6 }, (_, i) => (
+                <FadeIn key={i} delay={i * 0.06}>
+                  <div
+                    className="flex items-center justify-center"
+                    style={{
+                      height: 72,
+                      borderRadius: 8,
+                      border: `1px solid ${C.border}`,
+                      backgroundColor: C.bg,
+                    }}
+                  >
+                    <span
+                      className="text-xs tracking-wide select-none"
+                      style={{ color: C.muted, opacity: 0.45 }}
+                    >
+                      برند
+                    </span>
+                  </div>
+                </FadeIn>
+              ))}
             </div>
           </div>
         </section>
