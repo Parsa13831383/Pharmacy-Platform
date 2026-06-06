@@ -1,4 +1,16 @@
 import type { Admin, LoginResponse } from '@/types/admin'
+import type {
+  CustomerListResponse,
+  CustomerProfileResponse,
+  CustomerStats,
+  CustomerListItem,
+} from '@/types/customer'
+import type {
+  CampaignDraft,
+  CampaignAudience,
+  AudiencePreview,
+  CreateCampaignDraftInput,
+} from '@/types/marketing'
 import type { HomepageSettings, UpdateHomepageSettingsInput } from '@/types/cms'
 import type { ProductImage } from '@/types/product'
 import type { PromotionImage } from '@/types/promotion'
@@ -528,4 +540,73 @@ export async function deletePromotionImage(
     method: 'DELETE',
     headers: authHeaders(),
   })
+}
+
+// ─── Customers (CRM) ──────────────────────────────────────────────────────────
+
+export async function getAdminCustomers(params?: {
+  search?: string
+  sortBy?: string
+  sortOrder?: string
+  page?: number
+  pageSize?: number
+}): Promise<CustomerListResponse> {
+  const qs = new URLSearchParams()
+  if (params?.search) qs.set('search', params.search)
+  if (params?.sortBy) qs.set('sortBy', params.sortBy)
+  if (params?.sortOrder) qs.set('sortOrder', params.sortOrder)
+  if (params?.page) qs.set('page', String(params.page))
+  if (params?.pageSize) qs.set('pageSize', String(params.pageSize))
+  const query = qs.toString()
+  return apiFetch<CustomerListResponse>(
+    `/api/admin/customers${query ? `?${query}` : ''}`,
+    { headers: authHeaders() },
+  )
+}
+
+export async function getAdminCustomerById(id: string): Promise<CustomerProfileResponse> {
+  return apiFetch<CustomerProfileResponse>(`/api/admin/customers/${id}`, {
+    headers: authHeaders(),
+  })
+}
+
+export async function updateCustomerNotes(id: string, notes: string | null): Promise<CustomerListItem> {
+  const data = await apiFetch<{ customer: CustomerListItem }>(`/api/admin/customers/${id}/notes`, {
+    method: 'PATCH',
+    headers: authHeaders(),
+    body: JSON.stringify({ notes }),
+  })
+  return data.customer
+}
+
+export async function getCustomerStats(): Promise<CustomerStats> {
+  return apiFetch<CustomerStats>('/api/admin/customers/stats', {
+    headers: authHeaders(),
+  })
+}
+
+// ─── Marketing ────────────────────────────────────────────────────────────────
+
+export async function getAdminCampaignDrafts(): Promise<CampaignDraft[]> {
+  const data = await apiFetch<{ drafts: CampaignDraft[] }>('/api/admin/marketing/campaigns', {
+    headers: authHeaders(),
+  })
+  return data.drafts
+}
+
+export async function createAdminCampaignDraft(input: CreateCampaignDraftInput): Promise<{
+  draft: CampaignDraft
+  estimatedCount: number
+}> {
+  return apiFetch<{ draft: CampaignDraft; estimatedCount: number }>(
+    '/api/admin/marketing/campaigns',
+    { method: 'POST', headers: authHeaders(), body: JSON.stringify(input) },
+  )
+}
+
+export async function getAudiencePreview(audience: CampaignAudience): Promise<AudiencePreview> {
+  return apiFetch<AudiencePreview>(
+    `/api/admin/marketing/audience-preview?audience=${audience}`,
+    { headers: authHeaders() },
+  )
 }

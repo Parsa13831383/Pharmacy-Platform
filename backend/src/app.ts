@@ -14,6 +14,8 @@ import { adminOrderRouter, publicOrderRouter } from './modules/orders/orders.rou
 import { adminPromotionRouter, publicPromotionRouter } from './modules/promotions/promotion.routes'
 import reportsRouter from './modules/reports/reports.routes'
 import mediaRouter from './modules/media/media.routes'
+import customersRouter from './modules/customers/customers.routes'
+import marketingRouter from './modules/marketing/marketing.routes'
 
 const app = express()
 
@@ -109,6 +111,8 @@ app.use('/api/products', publicProductRouter)
 app.use('/api/orders', publicOrderRouter)
 app.use('/api/promotions', publicPromotionRouter)
 app.use('/api/admin/media', mediaRouter)
+app.use('/api/admin/customers', customersRouter)
+app.use('/api/admin/marketing', marketingRouter)
 // NOTE: /uploads is local filesystem only — for production use object storage.
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')))
 
