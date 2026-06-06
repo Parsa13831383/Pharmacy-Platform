@@ -69,17 +69,24 @@ function authHeaders(): Record<string, string> {
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
+const DEV = process.env.NODE_ENV !== 'production'
+
 export async function loginAdmin(email: string, password: string): Promise<LoginResponse> {
-  return apiFetch<LoginResponse>('/api/admin/auth/login', {
+  if (DEV) console.log('[AUTH] loginAdmin → POST /api/admin/auth/login', email)
+  const result = await apiFetch<LoginResponse>('/api/admin/auth/login', {
     method: 'POST',
     body: JSON.stringify({ email, password }),
   })
+  if (DEV) console.log('[AUTH] loginAdmin ← success, token_len:', result.token?.length ?? 0)
+  return result
 }
 
 export async function getCurrentAdmin(): Promise<Admin> {
+  if (DEV) console.log('[AUTH] getCurrentAdmin → GET /api/admin/auth/me')
   const data = await apiFetch<{ admin: Admin }>('/api/admin/auth/me', {
     headers: authHeaders(),
   })
+  if (DEV) console.log('[AUTH] getCurrentAdmin ←', data.admin?.email)
   return data.admin
 }
 
