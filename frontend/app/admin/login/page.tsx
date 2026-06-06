@@ -30,10 +30,12 @@ export default function AdminLoginPage() {
     setSubmitting(true)
     try {
       await login(email, password)
-      router.push('/admin')
+      // Hard navigation so the browser sends the newly-set cookie at the
+      // OS level — bypasses Next.js client-side routing which can race
+      // against the proxy's cookie check.
+      window.location.href = '/admin'
     } catch (err) {
       setError(err instanceof Error ? err.message : 'ورود ناموفق بود')
-    } finally {
       setSubmitting(false)
     }
   }
