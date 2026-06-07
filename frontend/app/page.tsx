@@ -21,17 +21,18 @@ import {
 import {
   getFeaturedCategories,
   getHomepageSettings,
+  getPublicProducts,
   getPublicPromotions,
 } from '@/lib/api'
 import type { HomepageSettings } from '@/types/cms'
 import type { Category } from '@/types/category'
 import type { PublicPromotion } from '@/types/promotion'
+import type { PublicProduct } from '@/types/public-product'
+import { LatestProductsSection } from '@/components/public/latest-products'
 
 // ─── Animation constants ──────────────────────────────────────────────────────
 const EASE_SMOOTH   = [0.25, 0.1, 0.25, 1] as const
 const EASE_ENTER    = [0.16, 1,   0.3,  1] as const
-// Silky bezier for kinetic typography — slow start, decisive arrival
-const EASE_KINETIC  = [0.25, 1,   0.5,  1] as const
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
@@ -284,74 +285,6 @@ function CategoryCard({
   )
 }
 
-// ─── Kinetic quote ────────────────────────────────────────────────────────────
-// Each entry: the line text + any style overrides applied to the inner motion.span
-const HERO_QUOTE_LINES: { text: string; style: React.CSSProperties }[] = [
-  { text: 'مراقبت از خود،', style: {} },
-  { text: 'سرمایه‌گذاری',   style: { color: C.muted, fontWeight: 300 } },
-  { text: 'در زندگی‌ست.',  style: {} },
-]
-
-function KineticQuote() {
-  const ref    = useRef<HTMLQuoteElement>(null)
-  // Trigger once when 80px of the element enters the viewport
-  const inView = useInView(ref, { once: true, margin: '-100px' })
-  const noAnim = useReducedMotion() ?? false
-
-  return (
-    <blockquote
-      ref={ref}
-      dir="rtl"
-      className="font-light"
-      style={{
-        fontSize:      'clamp(2.1rem, 7vw, 5.5rem)',
-        color:         C.dark,
-        letterSpacing: '-0.04em',
-        lineHeight:    1.15,   // Slightly looser than 1.08 — gives clip box room for Arabic descenders
-      }}
-    >
-      {HERO_QUOTE_LINES.map(({ text, style }, i) => (
-        // Outer span = clipping mask. overflow:hidden hides the child until it rises into view.
-        // paddingBottom gives breathing room so Arabic tails (ی، ق...) are never cut off.
-        <span
-          key={i}
-          style={{
-            display:       'block',
-            overflow:      'hidden',
-            paddingBottom: '0.12em',
-          }}
-        >
-          {/*
-           * motion.span rises from y:'100%' (one full line-height below the clip boundary)
-           * to y:0. Opacity fades in over the first ~55% of the slide so the early
-           * sub-pixel sliver is always invisible.
-           *
-           * To adjust speed:  change `duration` (seconds)
-           * To adjust stagger: change the `i * 0.14` multiplier
-           */}
-          <motion.span
-            style={{ display: 'block', ...style }}
-            initial={noAnim ? false : { y: '100%', opacity: 0 }}
-            animate={inView ? { y: 0, opacity: 1 } : {}}
-            transition={{
-              duration: 1.1,        // ← slide speed per line
-              delay:    i * 0.18,   // ← stagger delay (line 1 = 0s, 2 = 0.18s, 3 = 0.36s)
-              ease:     EASE_KINETIC,
-              opacity: {
-                duration: 0.65,
-                ease:     'easeOut',
-                delay:    i * 0.18,
-              },
-            }}
-          >
-            {text}
-          </motion.span>
-        </span>
-      ))}
-    </blockquote>
-  )
-}
-
 // ─── Why-Us image — self-contained placeholder + real image ───────────────────
 // Renders an elegant placeholder when /images/why-us.jpg is missing.
 // Add that file to frontend/public/images/ and it will display automatically.
@@ -478,9 +411,11 @@ const WHY_ITEMS = [
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function HomePage() {
-  const [cms, setCms]           = useState<HomepageSettings | null>(null)
-  const [featCats, setFeatCats] = useState<Category[]>([])
-  const [promos, setPromos]     = useState<PublicPromotion[]>([])
+  const [cms, setCms]                       = useState<HomepageSettings | null>(null)
+  const [featCats, setFeatCats]             = useState<Category[]>([])
+  const [promos, setPromos]                 = useState<PublicPromotion[]>([])
+  const [latestProducts, setLatestProducts] = useState<PublicProduct[]>([])
+  const [latestLoading, setLatestLoading]   = useState(true)
 
   // Hero scroll-linked transforms
   const heroRef = useRef<HTMLDivElement>(null)
@@ -493,15 +428,6 @@ export default function HomePage() {
   const imgY        = useTransform(scrollYProgress, [0, 1], [0,   -40])
   const textOpacity = useTransform(scrollYProgress, [0, 0.65], [1,  0.72])
   const textY       = useTransform(scrollYProgress, [0, 1],    [0, -20])
-
-  // Brand Philosophy — organic shape moves at ~0.4× scroll speed
-  const philosophyRef = useRef<HTMLDivElement>(null)
-  const { scrollYProgress: philosophyProgress } = useScroll({
-    target: philosophyRef,
-    offset: ['start end', 'end start'],
-  })
-  const organicY      = useTransform(philosophyProgress, [0, 1], ['40px', '-80px'])
-  const organicRotate = useTransform(philosophyProgress, [0, 1], [0, 6])
 
   // Why / Trust — image parallax (scale + drift)
   const whyRef      = useRef<HTMLDivElement>(null)
@@ -517,10 +443,13 @@ export default function HomePage() {
       getHomepageSettings(),
       getFeaturedCategories(),
       getPublicPromotions(),
-    ]).then(([cmsR, catR, promoR]) => {
+      getPublicProducts({ sort: 'newest' }),
+    ]).then(([cmsR, catR, promoR, prodR]) => {
       if (cmsR.status === 'fulfilled')   setCms(cmsR.value)
       if (catR.status === 'fulfilled')   setFeatCats(catR.value)
       if (promoR.status === 'fulfilled') setPromos(promoR.value)
+      if (prodR.status === 'fulfilled')  setLatestProducts(prodR.value.slice(0, 10))
+      setLatestLoading(false)
     })
   }, [])
 
@@ -674,82 +603,8 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* ══ BRAND PHILOSOPHY ══════════════════════════════════════════════════
-            Luxury editorial pause.
-            Layers: background · radial glow · organic parallax shape · quote · signature.
-            No decoration. Depth through light and whitespace only.
-        */}
-        <section
-          ref={philosophyRef}
-          className="relative py-44 md:py-72 overflow-hidden"
-          style={{ backgroundColor: C.bg }}
-        >
-          {/* Layer 1 — ambient radial glow: warm bone-white, 7% opacity, centered */}
-          <div
-            aria-hidden
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background: 'radial-gradient(ellipse 75% 55% at 50% 50%, rgba(210, 200, 183, 0.07) 0%, transparent 68%)',
-            }}
-          />
-
-          {/* Layer 2 — abstract organic shape: no object recognition, moves at ~0.4× scroll */}
-          <motion.div
-            aria-hidden
-            className="absolute pointer-events-none"
-            style={{
-              left:         '-18%',
-              bottom:       '-10%',
-              width:        'clamp(340px, 50vw, 660px)',
-              height:       'clamp(340px, 50vw, 660px)',
-              borderRadius: '62% 38% 52% 48% / 44% 58% 42% 56%',
-              background:   'radial-gradient(ellipse at 52% 46%, rgba(208, 197, 178, 0.052) 0%, rgba(218, 208, 191, 0.026) 44%, transparent 66%)',
-              y:      prefersReducedMotion ? 0 : organicY,
-              rotate: prefersReducedMotion ? 0 : organicRotate,
-            }}
-          />
-
-          {/* Layers 3 & 4 — quote + signature */}
-          <FadeIn
-            y={14}
-            duration={0.95}
-            className="relative z-10 max-w-3xl mx-auto px-6 md:px-10 text-center"
-          >
-            {/* Top rule */}
-            <motion.div
-              className="mx-auto mb-16 md:mb-24"
-              initial={{ width: 0 }}
-              whileInView={{ width: 44 }}
-              viewport={{ once: true }}
-              transition={{ duration: 1.0, ease: EASE_ENTER }}
-              style={{ height: 1, backgroundColor: C.border }}
-            />
-
-            <KineticQuote />
-
-            {/* Signature — delayed so it trails the last line settling */}
-            <motion.p
-              className="mt-12 md:mt-16 text-xs tracking-editorial"
-              style={{ color: C.muted }}
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.9, delay: 0.55, ease: 'easeOut' }}
-            >
-              — داروخانه دکتر پویا نانوازاده
-            </motion.p>
-
-            {/* Bottom rule */}
-            <motion.div
-              className="mx-auto mt-16 md:mt-24"
-              initial={{ width: 0 }}
-              whileInView={{ width: 44 }}
-              viewport={{ once: true }}
-              transition={{ duration: 1.0, delay: 0.28, ease: EASE_ENTER }}
-              style={{ height: 1, backgroundColor: C.border }}
-            />
-          </FadeIn>
-        </section>
+        {/* ══ LATEST PRODUCTS ══════════════════════════════════════════════ */}
+        <LatestProductsSection products={latestProducts} loading={latestLoading} />
 
         {/* ══ CATEGORIES ════════════════════════════════════════════════════════
             Horizontal swipe on mobile — immersive, edge-to-edge.
