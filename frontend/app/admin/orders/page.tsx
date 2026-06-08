@@ -49,7 +49,8 @@ function fmtPrice(amount: string | number) {
   return Number(amount).toLocaleString('fa-IR')
 }
 
-function truncate(str: string, max = 30) {
+function truncate(str: string | null | undefined, max = 30) {
+  if (!str) return ''
   return str.length > max ? str.slice(0, max) + '…' : str
 }
 
@@ -64,7 +65,7 @@ export default function OrdersPage() {
 
   useEffect(() => {
     getAdminOrders()
-      .then(setOrders)
+      .then(data => setOrders(data ?? []))
       .catch((err: Error) => setPageError(err.message))
       .finally(() => setLoading(false))
   }, [])
@@ -85,9 +86,9 @@ export default function OrdersPage() {
       const matchesStatus = statusFilter === 'ALL' || o.orderStatus === statusFilter
       const matchesSearch =
         !q ||
-        o.orderNumber.toLowerCase().includes(q) ||
-        o.customerName.toLowerCase().includes(q) ||
-        o.customerPhone.includes(q)
+        o.orderNumber?.toLowerCase().includes(q) ||
+        o.customerName?.toLowerCase().includes(q) ||
+        o.customerPhone?.includes(q)
       return matchesStatus && matchesSearch
     })
   }, [orders, statusFilter, search])
