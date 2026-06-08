@@ -13,6 +13,23 @@ import { getMediaUrl } from '@/lib/media'
 import { useCart } from '@/lib/cart-context'
 import type { PublicProduct, PublicProductImage } from '@/types/public-product'
 
+// ─── Event tracking ───────────────────────────────────────────────────────────
+
+function getSessionId(): string {
+  if (typeof window === 'undefined') return ''
+  let id = localStorage.getItem('_sid')
+  if (!id) { id = crypto.randomUUID(); localStorage.setItem('_sid', id) }
+  return id
+}
+
+function trackEvent(productId: string, eventType: 'PRODUCT_VIEW' | 'PRODUCT_CLICK') {
+  fetch('/api/events/product', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ productId, eventType, sessionId: getSessionId() }),
+  }).catch(() => {})
+}
+
 const C = {
   bg:     '#FAFAF8',
   bg2:    '#EFE7DA',
@@ -61,6 +78,7 @@ export default function ProductDetailPage() {
     getPublicProductBySlug(slug)
       .then(p => {
         setProduct(p)
+        trackEvent(p.id, 'PRODUCT_VIEW')
         const imgs = p.images ?? []
         setSelectedImg(imgs.find(i => i.isPrimary) ?? imgs[0] ?? null)
         const catSlug = p.category?.slug
@@ -74,6 +92,7 @@ export default function ProductDetailPage() {
 
   function handleAdd() {
     if (!product || product.stockQuantity === 0) return
+    trackEvent(product.id, 'PRODUCT_CLICK')
     addItem(product, quantity)
     setAdded(true)
     setTimeout(() => setAdded(false), 3000)

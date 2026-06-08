@@ -13,11 +13,12 @@ import {
   FileText,
   Save,
   CheckCircle2,
+  Activity,
 } from 'lucide-react'
 import { AdminShell } from '@/components/admin/AdminShell'
 import { Button } from '@/components/ui/button'
 import { getAdminCustomerById, updateCustomerNotes } from '@/lib/api'
-import type { CustomerProfileResponse } from '@/types/customer'
+import type { CustomerProfileResponse, CustomerRecentEvent } from '@/types/customer'
 import { cn } from '@/lib/utils'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -62,6 +63,30 @@ const ORDER_STATUS_CLASS: Record<string, string> = {
   SENT: 'bg-purple-100 text-purple-700',
   DELIVERED: 'bg-emerald-100 text-emerald-700',
   CANCELLED: 'bg-destructive/10 text-destructive',
+}
+
+const EVENT_TYPE_LABEL: Record<string, string> = {
+  PRODUCT_VIEW:  'مشاهده',
+  PRODUCT_CLICK: 'کلیک',
+}
+
+function EventRow({ event }: { event: CustomerRecentEvent }) {
+  return (
+    <div className="flex items-center gap-3 py-2.5 border-b border-border/50 last:border-0 text-sm">
+      <span className={cn(
+        'inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full shrink-0',
+        event.eventType === 'PRODUCT_VIEW'
+          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+          : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+      )}>
+        {EVENT_TYPE_LABEL[event.eventType] ?? event.eventType}
+      </span>
+      <span className="flex-1 text-foreground line-clamp-1">{event.productName}</span>
+      <span className="text-xs text-muted-foreground shrink-0 tabular-nums">
+        {new Date(event.createdAt).toLocaleDateString('fa-IR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+      </span>
+    </div>
+  )
 }
 
 // ─── Section wrapper ──────────────────────────────────────────────────────────
@@ -141,7 +166,7 @@ export default function CustomerProfilePage() {
     )
   }
 
-  const { customer, orders, topProducts, topCategories } = data
+  const { customer, orders, topProducts, topCategories, recentEvents = [] } = data
 
   return (
     <AdminShell>
@@ -247,8 +272,19 @@ export default function CustomerProfilePage() {
             </Section>
           </div>
 
-          {/* Right column: order history */}
-          <div className="lg:col-span-2">
+          {/* Right column: events + order history */}
+          <div className="lg:col-span-2 space-y-5">
+            {/* Recent activity */}
+            {recentEvents.length > 0 && (
+              <Section title="فعالیت‌های اخیر (مشاهده / کلیک)" icon={Activity}>
+                <div className="max-h-64 overflow-y-auto">
+                  {recentEvents.map((e) => (
+                    <EventRow key={e.id} event={e} />
+                  ))}
+                </div>
+              </Section>
+            )}
+
             <Section title="تاریخچه سفارش‌ها" icon={ShoppingBag}>
               {orders.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">سفارشی یافت نشد.</p>

@@ -58,11 +58,20 @@ export interface CustomerProfile extends CustomerListItem {
   notes: string | null
 }
 
+export interface CustomerRecentEvent {
+  id: string
+  eventType: string
+  productId: string
+  productName: string
+  createdAt: string
+}
+
 export interface CustomerProfileResponse {
   customer: CustomerProfile
   orders: CustomerOrder[]
   topProducts: CustomerTopProduct[]
   topCategories: CustomerTopCategory[]
+  recentEvents: CustomerRecentEvent[]
 }
 
 export interface CustomerStats {

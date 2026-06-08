@@ -6,6 +6,8 @@ import {
   getCustomerById,
   updateCustomerNotes,
   getCustomerStats,
+  backfillCustomersFromOrders,
+  linkSessionEventsToPhone,
 } from './customers.service'
 
 export async function listCustomersController(req: Request, res: Response) {
@@ -32,6 +34,7 @@ export async function getCustomerController(req: Request, res: Response) {
     if (err instanceof AppError) {
       res.status(err.statusCode).json({ success: false, message: err.message })
     } else {
+      console.error('[customers] getCustomerById error:', err)
       res.status(500).json({ success: false, message: 'Internal server error' })
     }
   }
@@ -59,6 +62,29 @@ export async function getStatsController(_req: Request, res: Response) {
   try {
     const stats = await getCustomerStats()
     res.json({ success: true, data: stats })
+  } catch {
+    res.status(500).json({ success: false, message: 'Internal server error' })
+  }
+}
+
+export async function backfillController(_req: Request, res: Response) {
+  try {
+    const result = await backfillCustomersFromOrders()
+    res.json({ success: true, data: result })
+  } catch {
+    res.status(500).json({ success: false, message: 'Backfill failed' })
+  }
+}
+
+export async function linkSessionController(req: Request, res: Response) {
+  const { sessionId, phone } = req.body as { sessionId?: string; phone?: string }
+  if (!sessionId || !phone) {
+    res.status(400).json({ success: false, message: 'sessionId and phone are required' })
+    return
+  }
+  try {
+    await linkSessionEventsToPhone(sessionId, phone)
+    res.json({ success: true })
   } catch {
     res.status(500).json({ success: false, message: 'Internal server error' })
   }

@@ -3,7 +3,7 @@
 import { useEffect, type ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Archive, BarChart2, Globe, LayoutDashboard, Leaf, LogOut, Megaphone, Package, ShoppingBag, Sparkles, Tag, Users } from 'lucide-react'
+import { AlertTriangle, Archive, BarChart2, Globe, LayoutDashboard, Leaf, LogOut, Lightbulb, Megaphone, Package, ShoppingBag, Sparkles, Tag, Users } from 'lucide-react'
 import { useAdminAuth } from '@/context/AdminAuthContext'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -23,8 +23,10 @@ const NAV_ITEMS = [
   { href: '/admin/customers', label: 'مشتریان', icon: Users, exact: false },
   { href: '/admin/marketing', label: 'بازاریابی', icon: Megaphone, exact: false },
   { href: '/admin/promotions', label: 'جشنواره‌ها', icon: Sparkles, exact: false },
-  { href: '/admin/reports', label: 'گزارش‌ها', icon: BarChart2, exact: false },
-  { href: '/admin/cms', label: 'صفحه اصلی', icon: Globe, exact: false },
+  { href: '/admin/reports',   label: 'گزارش‌ها',   icon: BarChart2,  exact: false },
+  { href: '/admin/insights',  label: 'بینش فروش',  icon: Lightbulb, exact: false },
+  { href: '/admin/cms',       label: 'صفحه اصلی', icon: Globe,          exact: false },
+  { href: '/admin/incidents', label: 'هشدارها',   icon: AlertTriangle,  exact: false },
 ]
 
 export function AdminShell({ children }: { children: ReactNode }) {

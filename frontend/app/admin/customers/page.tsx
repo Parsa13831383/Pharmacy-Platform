@@ -11,11 +11,12 @@ import {
   Search,
   ChevronRight,
   ChevronLeft,
+  RefreshCw,
 } from 'lucide-react'
 import { AdminShell } from '@/components/admin/AdminShell'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { getAdminCustomers, getCustomerStats } from '@/lib/api'
+import { getAdminCustomers, getCustomerStats, backfillCustomers } from '@/lib/api'
 import type { CustomerListItem, CustomerStats } from '@/types/customer'
 import { cn } from '@/lib/utils'
 
@@ -86,6 +87,23 @@ export default function CustomersPage() {
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [sortBy, setSortBy] = useState<'totalSpent' | 'lastOrderAt' | 'totalOrders'>('lastOrderAt')
   const [page, setPage] = useState(1)
+  const [backfilling, setBackfilling] = useState(false)
+  const [backfillMsg, setBackfillMsg] = useState('')
+
+  async function handleBackfill() {
+    setBackfilling(true)
+    setBackfillMsg('')
+    try {
+      const res = await backfillCustomers()
+      setBackfillMsg(`${res.processed.toLocaleString('fa-IR')} مشتری از ${res.orderCount.toLocaleString('fa-IR')} سفارش ساخته شد`)
+      getCustomerStats().then(setStats).catch(() => null)
+      setPage(1)
+    } catch {
+      setBackfillMsg('خطا در اجرای backfill')
+    } finally {
+      setBackfilling(false)
+    }
+  }
 
   // Debounce search input
   useEffect(() => {
@@ -122,9 +140,26 @@ export default function CustomersPage() {
     <AdminShell>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">مشتریان</h1>
-          <p className="text-sm text-muted-foreground mt-1">مدیریت پروفایل مشتریان و تحلیل خریدها</p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">مشتریان</h1>
+            <p className="text-sm text-muted-foreground mt-1">مدیریت پروفایل مشتریان و تحلیل خریدها</p>
+          </div>
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleBackfill}
+              disabled={backfilling}
+              className="gap-1.5 text-xs"
+            >
+              <RefreshCw className={cn('w-3.5 h-3.5', backfilling && 'animate-spin')} />
+              {backfilling ? 'در حال اجرا…' : 'Backfill مشتریان'}
+            </Button>
+            {backfillMsg && (
+              <span className="text-xs text-muted-foreground">{backfillMsg}</span>
+            )}
+          </div>
         </div>
 
         {/* Stats */}

@@ -16,6 +16,11 @@ import reportsRouter from './modules/reports/reports.routes'
 import mediaRouter from './modules/media/media.routes'
 import customersRouter from './modules/customers/customers.routes'
 import marketingRouter from './modules/marketing/marketing.routes'
+import insightsRouter from './modules/insights/insights.routes'
+import eventsRouter from './modules/events/events.routes'
+import incidentsRouter from './modules/incidents/incidents.routes'
+import type { NextFunction, Request, Response } from 'express'
+import { sendIncidentAlert } from './services/incident-alert.service'
 
 const app = express()
 
@@ -113,7 +118,42 @@ app.use('/api/promotions', publicPromotionRouter)
 app.use('/api/admin/media', mediaRouter)
 app.use('/api/admin/customers', customersRouter)
 app.use('/api/admin/marketing', marketingRouter)
+app.use('/api/admin/insights',   insightsRouter)
+app.use('/api/events',           eventsRouter)
+app.use('/api/admin/incidents',  incidentsRouter)
 // NOTE: /uploads is local filesystem only — for production use object storage.
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')))
+
+// ─── Global error handler ─────────────────────────────────────────────────────
+// Catches errors thrown from async route handlers that call next(err).
+// Controllers that swallow errors with try/catch won't reach here — those are
+// handled individually. This is the safety net for unexpected throws.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
+  const path_ = `${req.method} ${req.path}`
+  console.error(`[global-error] ${path_}:`, err.message)
+
+  // Only alert for endpoints where a 500 is genuinely critical
+  const isCriticalPath = (
+    req.path.startsWith('/api/checkout') ||
+    req.path.startsWith('/api/admin/orders') ||
+    req.path.startsWith('/api/admin/customers') ||
+    req.path.startsWith('/api/admin/incidents')
+  )
+
+  if (isCriticalPath) {
+    sendIncidentAlert({
+      severity: 'CRITICAL',
+      type:     'UNHANDLED_SERVER_ERROR',
+      title:    'Unhandled server error',
+      message:  err.message.slice(0, 300),
+      endpoint: path_,
+    }).catch(() => {})
+  }
+
+  if (!res.headersSent) {
+    res.status(500).json({ success: false, message: 'Internal server error' })
+  }
+})
 
 export default app

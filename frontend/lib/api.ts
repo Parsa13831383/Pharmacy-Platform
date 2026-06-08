@@ -1,4 +1,13 @@
 import type { Admin, LoginResponse } from '@/types/admin'
+import type { IncidentLog, IncidentListResponse } from '@/types/incident'
+import type {
+  InsightsOverview,
+  RevenueTrendPoint,
+  ProductInsights,
+  CategoryInsightItem,
+  CustomerInsights,
+  Recommendation,
+} from '@/types/insights'
 import type {
   CustomerListResponse,
   CustomerProfileResponse,
@@ -592,6 +601,13 @@ export async function getCustomerStats(): Promise<CustomerStats> {
   })
 }
 
+export async function backfillCustomers(): Promise<{ processed: number; orderCount: number }> {
+  return apiFetch<{ processed: number; orderCount: number }>('/api/admin/customers/backfill', {
+    method: 'POST',
+    headers: authHeaders(),
+  })
+}
+
 // ─── Marketing ────────────────────────────────────────────────────────────────
 
 export async function getAdminCampaignDrafts(): Promise<CampaignDraft[]> {
@@ -616,4 +632,98 @@ export async function getAudiencePreview(audience: CampaignAudience): Promise<Au
     `/api/admin/marketing/audience-preview?audience=${audience}`,
     { headers: authHeaders() },
   )
+}
+
+// ─── Insights ─────────────────────────────────────────────────────────────────
+
+export async function getInsightsOverview(days: number): Promise<InsightsOverview> {
+  return apiFetch<InsightsOverview>(
+    `/api/admin/insights/overview?days=${days}`,
+    { headers: authHeaders() },
+  )
+}
+
+export async function getInsightsRevenueTrend(days: number): Promise<RevenueTrendPoint[]> {
+  return apiFetch<RevenueTrendPoint[]>(
+    `/api/admin/insights/revenue-trend?days=${days}`,
+    { headers: authHeaders() },
+  )
+}
+
+export async function getInsightsProducts(days: number): Promise<ProductInsights> {
+  return apiFetch<ProductInsights>(
+    `/api/admin/insights/products?days=${days}`,
+    { headers: authHeaders() },
+  )
+}
+
+export async function getInsightsCategories(days: number): Promise<CategoryInsightItem[]> {
+  return apiFetch<CategoryInsightItem[]>(
+    `/api/admin/insights/categories?days=${days}`,
+    { headers: authHeaders() },
+  )
+}
+
+export async function getInsightsCustomers(days: number): Promise<CustomerInsights> {
+  return apiFetch<CustomerInsights>(
+    `/api/admin/insights/customers?days=${days}`,
+    { headers: authHeaders() },
+  )
+}
+
+export async function getInsightsRecommendations(): Promise<Recommendation[]> {
+  return apiFetch<Recommendation[]>(
+    '/api/admin/insights/recommendations',
+    { headers: authHeaders() },
+  )
+}
+
+// ─── Incidents ────────────────────────────────────────────────────────────────
+
+export async function getAdminIncidents(): Promise<IncidentLog[]> {
+  const data = await apiFetch<IncidentListResponse>('/api/admin/incidents', {
+    headers: authHeaders(),
+  })
+  return data.incidents
+}
+
+export interface AlertDiagnosticResponse {
+  success:           boolean
+  mode:              'disabled' | 'test' | 'live'
+  enabled:           boolean
+  testMode:          boolean
+  hasPushoverToken:  boolean
+  hasPushoverUser:   boolean
+  meetsMinSeverity:  boolean
+  cooldownWasActive: boolean
+  pushoverAttempted: boolean
+  pushoverStatus:    number | null
+  pushoverBody:      string | null
+  pushoverError:     string | null
+  dbLogged:          boolean
+}
+
+export interface EmergencyAlertDiagnosticResponse {
+  success:           boolean
+  mode:              'disabled' | 'test' | 'live'
+  pushoverAttempted: boolean
+  pushoverStatus:    number | null
+  pushoverError:     string | null
+  priority:          number
+  retry:             number
+  expire:            number
+}
+
+export async function triggerTestAlert(): Promise<AlertDiagnosticResponse> {
+  return apiFetch<AlertDiagnosticResponse>('/api/admin/incidents/test-alert', {
+    method:  'POST',
+    headers: authHeaders(),
+  })
+}
+
+export async function triggerTestEmergencyAlert(): Promise<EmergencyAlertDiagnosticResponse> {
+  return apiFetch<EmergencyAlertDiagnosticResponse>('/api/admin/incidents/test-emergency-alert', {
+    method:  'POST',
+    headers: authHeaders(),
+  })
 }

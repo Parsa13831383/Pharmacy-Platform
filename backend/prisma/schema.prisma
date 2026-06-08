@@ -107,6 +107,7 @@ model Product {
   inventoryAdjustments  InventoryAdjustment[]
   promotions            PromotionProduct[]
   images                ProductImage[]
+  events                CustomerEvent[]
 
   @@index([categoryId])
   @@index([isActive])
@@ -233,4 +234,90 @@ model HomepageSettings {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// ─── CRM ─────────────────────────────────────────────────────────────────────
+
+enum CampaignAudience {
+  ALL
+  VIP
+  NEW
+  INACTIVE
+  REGULAR
+  COSMETICS
+  SKIN_CARE
+}
+
+model Customer {
+  id             String   @id @default(uuid())
+  phone          String   @unique
+  name           String
+  firstOrderAt   DateTime
+  lastOrderAt    DateTime
+  totalOrders    Int      @default(0)
+  totalSpent     Decimal  @default(0) @db.Decimal(14, 2)
+  notes          String?
+  marketingOptIn Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([phone])
+  @@index([lastOrderAt])
+  @@index([totalSpent])
+}
+
+model CampaignDraft {
+  id        String           @id @default(uuid())
+  title     String
+  message   String
+  audience  CampaignAudience
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+}
+
+model CustomerEvent {
+  id        String   @id @default(uuid())
+  sessionId String?
+  phone     String?
+  productId String
+  eventType String
+  createdAt DateTime @default(now())
+
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([phone])
+  @@index([sessionId])
+  @@index([productId])
+  @@index([createdAt])
+}
+
+// ─── Incident Monitoring ──────────────────────────────────────────────────────
+
+enum IncidentSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum IncidentStatus {
+  SENT
+  FAILED
+  TEST
+}
+
+model IncidentLog {
+  id        String           @id @default(uuid())
+  severity  IncidentSeverity
+  type      String
+  title     String
+  message   String
+  orderId   String?
+  phone     String?
+  endpoint  String?
+  status    IncidentStatus
+  createdAt DateTime         @default(now())
+
+  @@index([createdAt])
+  @@index([severity])
+  @@index([type])
 }
