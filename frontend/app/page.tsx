@@ -9,7 +9,6 @@ import { useRouter } from 'next/navigation'
 import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
 import {
-  HeroEditorialSVG,
   PharmacyStorySVG,
   PromoBannerSVG,
   SkincareSVG,
@@ -29,6 +28,8 @@ import type { Category } from '@/types/category'
 import type { PublicPromotion } from '@/types/promotion'
 import type { PublicProduct } from '@/types/public-product'
 import { LatestProductsSection } from '@/components/public/latest-products'
+import { EditorialVideoHero } from '@/components/public/editorial-video-hero'
+import { EditorialStorySection } from '@/components/public/editorial-story-section'
 
 // ─── Animation constants ──────────────────────────────────────────────────────
 const EASE_SMOOTH   = [0.25, 0.1, 0.25, 1] as const
@@ -417,17 +418,7 @@ export default function HomePage() {
   const [latestProducts, setLatestProducts] = useState<PublicProduct[]>([])
   const [latestLoading, setLatestLoading]   = useState(true)
 
-  // Hero scroll-linked transforms
-  const heroRef = useRef<HTMLDivElement>(null)
-  const { scrollYProgress } = useScroll({
-    target: heroRef,
-    offset: ['start start', 'end start'],
-  })
   const prefersReducedMotion = useReducedMotion() ?? false
-  const imgScale    = useTransform(scrollYProgress, [0, 1], [1,    1.08])
-  const imgY        = useTransform(scrollYProgress, [0, 1], [0,   -40])
-  const textOpacity = useTransform(scrollYProgress, [0, 0.65], [1,  0.72])
-  const textY       = useTransform(scrollYProgress, [0, 1],    [0, -20])
 
   // Why / Trust — image parallax (scale + drift)
   const whyRef      = useRef<HTMLDivElement>(null)
@@ -453,7 +444,6 @@ export default function HomePage() {
     })
   }, [])
 
-  const heroEnabled  = !cms || cms.isHeroEnabled
   const featCatOk    = (!cms || cms.isFeaturedCategoriesEnabled) && featCats.length > 0
   const promoEnabled = !cms || cms.isPromoEnabled
   const aboutOk      = (!cms || cms.isAboutEnabled) && cms?.aboutTitle
@@ -485,123 +475,10 @@ export default function HomePage() {
         </section>
 
         {/* ══ HERO ══════════════════════════════════════════════════════════════ */}
-        {heroEnabled && (
-          <section style={{ backgroundColor: C.bg }}>
-            <div ref={heroRef} className="max-w-7xl mx-auto">
-              <div className="flex flex-col md:grid md:grid-cols-2 md:min-h-[82vh]">
+        <EditorialVideoHero />
 
-                {/* Image — scroll parallax */}
-                <motion.div
-                  className="order-2 md:order-2 relative overflow-hidden min-h-55 md:min-h-0"
-                  style={{ maxHeight: '85vh' }}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 1.1, ease: EASE_ENTER }}
-                >
-                  <motion.div
-                    className="absolute inset-0"
-                    style={prefersReducedMotion ? {} : { scale: imgScale, y: imgY }}
-                  >
-                    <HeroEditorialSVG />
-                  </motion.div>
-                </motion.div>
-
-                {/* Text */}
-                <motion.div
-                  className="order-1 md:order-1 flex flex-col justify-center px-6 md:px-16 lg:px-20 py-10 md:py-24"
-                  style={{
-                    backgroundColor: C.bg,
-                    ...(prefersReducedMotion ? {} : { opacity: textOpacity, y: textY }),
-                  }}
-                >
-                  <motion.p
-                    className="text-xs tracking-editorial mb-6"
-                    style={{ color: C.green }}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.55, delay: 0.25, ease: EASE_ENTER }}
-                  >
-                    داروخانه دکتر پویا نانوازاده
-                  </motion.p>
-
-                  <div className="space-y-1 mb-7" style={{ overflow: 'hidden' }}>
-                    {(cms?.heroTitle
-                      ? [cms.heroTitle]
-                      : ['سلامت، زیبایی و مراقبت', 'با اطمینان']
-                    ).map((line, i, arr) => (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, y: 32 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.7, delay: 0.3 + i * 0.11, ease: EASE_ENTER }}
-                      >
-                        <span
-                          className="block font-bold leading-none"
-                          style={{
-                            fontSize: 'clamp(1.9rem, 4.5vw, 3.5rem)',
-                            color: i === arr.length - 1 && arr.length > 1 ? C.muted : C.dark,
-                            fontWeight: i === arr.length - 1 && arr.length > 1 ? 400 : 700,
-                            letterSpacing: '-0.03em',
-                          }}
-                        >
-                          {line}
-                        </span>
-                      </motion.div>
-                    ))}
-                  </div>
-
-                  <motion.div
-                    className="mb-6"
-                    initial={{ width: 0 }}
-                    animate={{ width: 44 }}
-                    transition={{ duration: 0.75, delay: 0.62, ease: EASE_ENTER }}
-                    style={{ height: 1, backgroundColor: C.border }}
-                  />
-
-                  <motion.p
-                    className="text-base leading-relaxed mb-9"
-                    style={{ color: C.muted, maxWidth: '38ch' }}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.65, delay: 0.58, ease: EASE_ENTER }}
-                  >
-                    {cms?.heroSubtitle ??
-                      'مجموعه‌ای از محصولات دارویی، مراقبت پوست و مو، مکمل‌های غذایی و خدمات مشاوره تخصصی با تضمین اصالت.'}
-                  </motion.p>
-
-                  <motion.div
-                    className="flex flex-wrap gap-3"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.72, ease: EASE_ENTER }}
-                  >
-                    <CtaButton href={cms?.heroButtonLink ?? '/products'} variant="primary">
-                      {cms?.heroButtonText ?? 'مشاهده محصولات'}
-                    </CtaButton>
-                    <CtaButton href="/track-order" variant="outline">
-                      ثبت نسخه آنلاین
-                    </CtaButton>
-                  </motion.div>
-
-                  {/* Trust badges */}
-                  <motion.div
-                    className="flex flex-wrap gap-x-5 gap-y-2 mt-6"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.6, delay: 0.88, ease: EASE_ENTER }}
-                  >
-                    {['تضمین اصالت کالا', 'مشاوره تخصصی', 'نسخه آنلاین', 'ارسال سریع'].map(badge => (
-                      <span key={badge} className="flex items-center gap-1.5 text-xs" style={{ color: C.muted }}>
-                        <span style={{ color: C.green, fontWeight: 600 }}>✓</span>
-                        {badge}
-                      </span>
-                    ))}
-                  </motion.div>
-                </motion.div>
-              </div>
-            </div>
-          </section>
-        )}
+        {/* ══ STORY SECTION ════════════════════════════════════════════════ */}
+        <EditorialStorySection />
 
         {/* ══ LATEST PRODUCTS ══════════════════════════════════════════════ */}
         <LatestProductsSection products={latestProducts} loading={latestLoading} />
